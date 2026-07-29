@@ -1,1 +1,2 @@
 LocalTime,WindDir,WindSpeed_kt,Gust_kt,Visibility_km,CeilingEst_ft,Precip,Temp_C,Dew_C,Cloud_pct,Verdict
+2026-07-29T21:00,61,3,8,44.8,,None,10.3,7.0,2,<STATION_ID>1945</STATION_ID>,,,,,,,,,,FLYABLE,forecast
