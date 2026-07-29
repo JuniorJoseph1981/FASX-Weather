@@ -103,6 +103,7 @@ def fetch_iweathar_station():
     try:
         status = tail[7]
         if status != "ON-LINE":
+            print(f"iWeathar station status not ON-LINE, got: {status!r} (tail[6]={tail[6]!r}, tail[8]={tail[8] if len(tail)>8 else 'n/a'!r})")
             return {"status": status}
         return {
             "status": status,
