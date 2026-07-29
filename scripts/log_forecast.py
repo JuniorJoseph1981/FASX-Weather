@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 LAT, LON = -34.0482, 20.4746
@@ -22,12 +23,12 @@ def kmh_to_kt(v):
     return v * 0.539957
 
 
-def precip_category(mm):
-    if mm >= 7.6:
+def precip_category(mm_per_hr):
+    if mm_per_hr >= 7.6:
         return "Heavy"
-    if mm >= 2.5:
+    if mm_per_hr >= 2.5:
         return "Moderate"
-    if mm >= 0.1:
+    if mm_per_hr >= 0.1:
         return "Light"
     return "None"
 
@@ -71,10 +72,12 @@ def fetch_forecast():
 
 
 def fetch_iweathar_station():
-    """Fetch the live station feed and parse the Swellengrebel Airfield record.
-    Returns None if unreachable/blocked/no key configured; returns
-    {'status': 'OFF-LINE'} if the station itself is offline; otherwise
-    returns the parsed reading."""
+    """Fetch the live station feed (real XML, one <ITEM> per station) and
+    return the Swellengrebel Airfield record. Returns None if unreachable/no
+    key configured/not found; returns {'status': '...'} if found but not
+    ON-LINE; otherwise returns the full parsed reading including the
+    station's own ceiling (CLOUD_HEIGHT_M, corrected from MSL to AGL using
+    its ASL_FEET elevation) and real rain rate (RAIN_RATE_MM_HR)."""
     if not IWEATHAR_KEY:
         print("IWEATHAR_KEY not set, skipping station fetch")
         return None
@@ -94,34 +97,75 @@ def fetch_iweathar_station():
         print(f"iWeathar fetch failed: {e}")
         return None
 
-    idx = raw.find(IWEATHAR_STATION_NAME)
-    if idx == -1:
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as e:
+        print(f"iWeathar XML parse failed: {e} (response may be an access-denied message, not XML)")
+        return None
+
+    item = None
+    for it in root.iter("ITEM"):
+        loc = (it.findtext("LOCATION") or "").strip()
+        if loc == IWEATHAR_STATION_NAME:
+            item = it
+            break
+
+    if item is None:
         print("Swellengrebel Airfield not found in iWeathar feed")
         return None
 
-    tail = raw[idx:].split()
+    def gettext(tag):
+        v = item.findtext(tag)
+        return v.strip() if v is not None else ""
+
+    status = gettext("STATUS")
+    if status != "ON-LINE":
+        print(f"iWeathar station status not ON-LINE, got: {status!r}")
+        return {"status": status}
+
     try:
-        status = tail[7]
-        if status != "ON-LINE":
-            print(f"iWeathar station status not ON-LINE, got: {status!r} (tail[6]={tail[6]!r}, tail[8]={tail[8] if len(tail)>8 else 'n/a'!r})")
-            return {"status": status}
-        return {
-            "status": status,
-            "wind_avg_kt": round(kmh_to_kt(float(tail[8])), 1),
-            "wind_gust_kt": round(kmh_to_kt(float(tail[9])), 1),
-            "wind_min_kt": round(kmh_to_kt(float(tail[10])), 1),
-            "dir_compass": tail[11],
-            "dir_deg": float(tail[12]),
-            "rain_today_mm": float(tail[14]),
-            "temp_c": float(tail[15]),
-            "humidity_pct": float(tail[16]),
-            "dewpoint_c": float(tail[17]),
-            "pressure_hpa": float(tail[18]),
-            "station_time": f"{tail[2]} {tail[3]}",
-        }
-    except (IndexError, ValueError) as e:
-        print(f"iWeathar parse failed: {e}")
+        wind_avg_kmh = float(gettext("WIND_AVG"))
+        wind_gust_kmh = float(gettext("WIND_MAX"))
+        wind_min_kmh = float(gettext("WIND_MIN"))
+        dir_compass = gettext("WIND_DIR")
+        dir_deg = float(gettext("WIND_ANG") or 0)
+        rain_today_mm = float(gettext("RAINFALL_MM") or 0)
+        rain_rate_txt = gettext("RAIN_RATE_MM_HR")
+        rain_rate_mm_hr = float(rain_rate_txt) if rain_rate_txt else 0.0
+        temp_c = float(gettext("TEMPERATURE_C"))
+        humidity_pct = float(gettext("HUMIDITY_PERC") or 0)
+        dewpoint_c = float(gettext("DEWPOINT_C"))
+        pressure_hpa = float(gettext("PRESSURE_MB"))
+        asl_ft = float(gettext("ASL_FEET") or 0)
+        cloud_height_txt = gettext("CLOUD_HEIGHT_M")
+        cloud_height_m = float(cloud_height_txt) if cloud_height_txt else None
+        station_time = gettext("LASTUPDATE")
+    except ValueError as e:
+        print(f"iWeathar field parse failed: {e}")
         return None
+
+    station_ceiling_ft = None
+    if cloud_height_m is not None:
+        cloud_height_ft_msl = cloud_height_m / 0.3048
+        station_ceiling_ft = round(cloud_height_ft_msl - asl_ft)
+
+    return {
+        "status": status,
+        "wind_avg_kt": round(kmh_to_kt(wind_avg_kmh), 1),
+        "wind_gust_kt": round(kmh_to_kt(wind_gust_kmh), 1),
+        "wind_min_kt": round(kmh_to_kt(wind_min_kmh), 1),
+        "dir_compass": dir_compass,
+        "dir_deg": dir_deg,
+        "rain_today_mm": rain_today_mm,
+        "rain_rate_mm_hr": rain_rate_mm_hr,
+        "temp_c": temp_c,
+        "humidity_pct": humidity_pct,
+        "dewpoint_c": dewpoint_c,
+        "pressure_hpa": pressure_hpa,
+        "asl_ft": asl_ft,
+        "station_ceiling_ft": station_ceiling_ft,
+        "station_time": station_time,
+    }
 
 
 def main():
@@ -151,11 +195,15 @@ def main():
     station = fetch_iweathar_station()
 
     if station and station.get("status") == "ON-LINE":
-        st_ceiling = estimate_ceiling(station["temp_c"], station["dewpoint_c"], fc_cloud)
-        verdict = verdict_for(station["wind_gust_kt"], st_ceiling, fc_vis_km, fc_precip)
+        st_ceiling = station.get("station_ceiling_ft")
+        if st_ceiling is None:
+            st_ceiling = estimate_ceiling(station["temp_c"], station["dewpoint_c"], fc_cloud)
+        st_precip = precip_category(station["rain_rate_mm_hr"])
+        verdict = verdict_for(station["wind_gust_kt"], st_ceiling, fc_vis_km, st_precip)
         verdict_source = "station"
     else:
         st_ceiling = None
+        st_precip = None
         verdict = verdict_for(fc_gust, fc_ceiling, fc_vis_km, fc_precip)
         verdict_source = "forecast"
 
@@ -172,7 +220,9 @@ def main():
         station.get("dewpoint_c", "") if station else "",
         station.get("pressure_hpa", "") if station else "",
         station.get("rain_today_mm", "") if station else "",
+        station.get("rain_rate_mm_hr", "") if station else "",
         st_ceiling if st_ceiling is not None else "",
+        st_precip if st_precip is not None else "",
         station.get("station_time", "") if station else "",
         verdict, verdict_source,
     ]
@@ -188,8 +238,8 @@ def main():
                 "Fc_WindDir", "Fc_WindSpeed_kt", "Fc_Gust_kt", "Fc_Visibility_km",
                 "Fc_CeilingEst_ft", "Fc_Precip", "Fc_Temp_C", "Fc_Dew_C", "Fc_Cloud_pct",
                 "St_Status", "St_WindDir", "St_WindAvg_kt", "St_WindGust_kt",
-                "St_Temp_C", "St_Dew_C", "St_Pressure_hPa", "St_RainToday_mm",
-                "St_CeilingEst_ft", "St_Time",
+                "St_Temp_C", "St_Dew_C", "St_Pressure_hPa", "St_RainToday_mm", "St_RainRate_mm_hr",
+                "St_CeilingEst_ft", "St_Precip", "St_Time",
                 "Verdict", "VerdictSource",
             ])
         writer.writerow(row)
