@@ -1,1 +1,2 @@
 LocalTime,Fc_WindDir,Fc_WindSpeed_kt,Fc_Gust_kt,Fc_Visibility_km,Fc_CeilingEst_ft,Fc_Precip,Fc_Temp_C,Fc_Dew_C,Fc_Cloud_pct,St_Status,St_WindDir,St_WindAvg_kt,St_WindGust_kt,St_Temp_C,St_Dew_C,St_Pressure_hPa,St_RainToday_mm,St_RainRate_mm_hr,St_CeilingEst_ft,St_Precip,St_Time,Verdict,VerdictSource
+2026-07-29T21:00,61,3,8,44.8,,None,10.3,7.0,2,ON-LINE,NW,1.1,2.2,10.2,8.5,1024.68,0.0,0.0,712,None,2026-07-29 23:01:04,NO-FLY,station
