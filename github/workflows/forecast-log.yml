@@ -1,0 +1,28 @@
+name: FASX forecast log
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log forecast
+        env:
+          IWEATHAR_KEY: ${{ secrets.IWEATHAR_KEY }}
+        run: python3 scripts/log_forecast.py
+
+      - name: Commit updated log
+        run: |
+          git config user.name "fasx-forecast-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/forecast_log.csv
+          git diff --cached --quiet || git commit -m "Log forecast $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
