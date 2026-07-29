@@ -246,10 +246,9 @@
 <script>
 const LAT = -34.0482, LON = 20.4746, TZ = "Africa/Johannesburg";
 
-const HISTORY_CSV_URL = "";
-
-const WORKER_URL = ""; // fill in after deploying the Cloudflare Worker, e.g. https://fasx-log.<you>.workers.dev
-const MANUAL_LOG_CSV_URL = ""; // e.g. https://raw.githubusercontent.com/<you>/<repo>/main/data/manual_log.csv
+const HISTORY_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/fasx-weather/main/data/forecast_log.csv";
+const WORKER_URL = "https://fasx-log.vmcaviation2025.workers.dev";
+const MANUAL_LOG_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/fasx-weather/main/data/manual_log.csv";
 
 const CRIT = {
   windCaution: 15, windNoFly: 25,
