@@ -246,9 +246,10 @@
 <script>
 const LAT = -34.0482, LON = 20.4746, TZ = "Africa/Johannesburg";
 
-const HISTORY_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/fasx-weather/main/data/forecast_log.csv";
+const HISTORY_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/FASX-Weather/main/data/forecast_log.csv";
+
 const WORKER_URL = "https://fasx-log.vmcaviation2025.workers.dev";
-const MANUAL_LOG_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/fasx-weather/main/data/manual_log.csv";
+const MANUAL_LOG_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/FASX-Weather/main/data/manual_log.csv";
 
 const CRIT = {
   windCaution: 15, windNoFly: 25,
@@ -267,6 +268,18 @@ let hourlyCache = null;
 let nowIdxCache = null;
 let scheduleCache = [];
 let historyRows = [];
+
+function reasonsForCsvRow(r){
+  const fromStation = r.VerdictSource === "station";
+  const gust = parseFloat(fromStation ? r.St_WindGust_kt : r.Fc_Gust_kt);
+  const ceilRaw = fromStation ? r.St_CeilingEst_ft : r.Fc_CeilingEst_ft;
+  const ceilingFt = (ceilRaw === "" || ceilRaw === undefined || ceilRaw === null) ? null : parseFloat(ceilRaw);
+  const visKm = parseFloat(r.Fc_Visibility_km);
+  const precip = fromStation ? (r.St_Precip || "None") : r.Fc_Precip;
+  if(isNaN(gust) || isNaN(visKm)) return ["insufficient data to re-derive reason"];
+  const v = verdictFor(gust, ceilingFt, visKm, precip);
+  return v.reasons.length ? v.reasons : ["all parameters within standard VFR minima"];
+}
 
 function csvVerdictClass(v){
   if(v==='FLYABLE') return 'f';
@@ -343,7 +356,8 @@ function renderHistoryDay(dateStr){
     const windTip = fromStation
       ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)`
       : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
-    return `<div class="strip-item ${cls}" title="${hh}:${mm} - ${r.Verdict} - ${windTip}"><div class="bar"></div><div class="t mono">${label}</div></div>`;
+    const reasons = reasonsForCsvRow(r).join('; ');
+    return `<div class="strip-item ${cls}" title="${hh}:${mm} \u2014 ${r.Verdict}${'\u000A'}${windTip}${'\u000A'}reason: ${reasons}"><div class="bar"></div><div class="t mono">${label}</div></div>`;
   }).join('');
 
   result.innerHTML = `
@@ -689,8 +703,9 @@ async function renderAll(entries){
       const [hh, mm] = (timePart||'00:00').split(':');
       const label = mm === '00' ? hh : '';
       const src = r.VerdictSource || 'unknown';
-      const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}&deg;/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
-      return `<div class="strip-item ${cls}" title="${hh}:${mm} local - ${r.Verdict} - ${windInfo}">
+      const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
+      const reasons = reasonsForCsvRow(r).join('; ');
+      return `<div class="strip-item ${cls}" title="${hh}:${mm} local \u2014 ${r.Verdict}${'\u000A'}${windInfo}${'\u000A'}reason: ${reasons}">
         <div class="bar"></div>
         <div class="t mono">${label}</div>
       </div>`;
