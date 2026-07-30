@@ -2,13 +2,12 @@
 //
 // Two jobs in one Worker:
 //   1. fetch()     — receives a POST from the dashboard with one manually
-//                    logged check, appends it to data/manual_log.csv.
+//                    logged check, appends it to data/manual_log.csv. Also
+//                    serves GET /live-station for on-demand fresh readings.
 //   2. scheduled() — fires on a Cron Trigger every 30 minutes, fetches the
 //                    Open-Meteo forecast and the live iWeathar station
 //                    reading, computes a verdict, and appends a row to
-//                    data/forecast_log.csv. Replaces the old GitHub Actions
-//                    workflow, which GitHub's free scheduler was silently
-//                    skipping under load.
+//                    data/forecast_log.csv.
 //
 // The GitHub token lives only here (as a Worker secret), never in the
 // publicly-served dashboard page or in GitHub Actions.
