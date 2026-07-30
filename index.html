@@ -144,13 +144,20 @@
 
   .strip{display:flex; gap:3px; overflow-x:auto; padding-bottom:6px;}
   .strip-item{
-    flex:0 0 auto; width:34px; display:flex; flex-direction:column; align-items:center; gap:5px;
+    flex:0 0 auto; width:34px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer;
   }
-  .strip-item .bar{width:16px; height:34px; border-radius:2px;}
+  .strip-item .bar{width:16px; height:34px; border-radius:2px; transition:box-shadow 0.15s;}
   .strip-item.f .bar{background:var(--green);}
   .strip-item.c .bar{background:var(--amber);}
   .strip-item.n .bar{background:var(--red);}
   .strip-item .t{font-size:9px; color:var(--dim);}
+  .strip-item.selected .bar{box-shadow:0 0 0 2px var(--text);}
+  .strip-detail{
+    display:none; margin-top:10px; padding:10px 12px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:4px; font-size:12px; color:var(--sub); white-space:pre-line; line-height:1.6;
+  }
+  .strip-detail.visible{display:block;}
+  .strip-hint{font-size:10px; color:var(--dim); margin-top:6px; font-style:italic;}
 
   .sched-strip{display:flex; gap:8px; flex-wrap:wrap;}
   .sched-item{
@@ -281,6 +288,28 @@ function reasonsForCsvRow(r){
   return v.reasons.length ? v.reasons : ["all parameters within standard VFR minima"];
 }
 
+function escapeAttr(s){
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function wireStripTaps(stripId, detailId){
+  const strip = document.getElementById(stripId);
+  const detail = document.getElementById(detailId);
+  if(!strip || !detail) return;
+  strip.addEventListener('click', (e)=>{
+    const item = e.target.closest('.strip-item');
+    if(!item || !item.dataset.detail) return;
+    strip.querySelectorAll('.strip-item').forEach(el=>el.classList.remove('selected'));
+    item.classList.add('selected');
+    detail.textContent = item.dataset.detail;
+    detail.classList.add('visible');
+  });
+}
+
 function csvVerdictClass(v){
   if(v==='FLYABLE') return 'f';
   if(v==='CAUTION') return 'c';
@@ -357,17 +386,21 @@ function renderHistoryDay(dateStr){
       ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)`
       : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
     const reasons = reasonsForCsvRow(r).join('; ');
-    return `<div class="strip-item ${cls}" title="${hh}:${mm} \u2014 ${r.Verdict}${'\u000A'}${windTip}${'\u000A'}reason: ${reasons}"><div class="bar"></div><div class="t mono">${label}</div></div>`;
+   const detailText = `${hh}:${mm} \u2014 ${r.Verdict}\n${windTip}\nreason: ${reasons}`;
+    return `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}"><div class="bar"></div><div class="t mono">${label}</div></div>`;
   }).join('');
 
   result.innerHTML = `
-    <div class="strip" style="margin-bottom:12px;">${stripHtml}</div>
-    <div class="thresholds">
+    <div class="strip" id="histStrip" style="margin-bottom:12px;">${stripHtml}</div>
+    <div class="strip-detail" id="histStripDetail"></div>
+    <div class="strip-hint">tap a block for the reason</div>
+    <div class="thresholds" style="margin-top:10px;">
       <b>${dayRows.length}</b> checks logged (${stationCount} from the on-site station, ${dayRows.length-stationCount} forecast-only) &middot;
       worst verdict: <b class="badge-${csvVerdictClass(worst)}">${worst}</b> &middot;
       gust range ${minGust}&ndash;${maxGust}kt &middot; temp range ${minTemp}&ndash;${maxTemp}&deg;C
     </div>
   `;
+  wireStripTaps('histStrip', 'histStripDetail');
 }
 
 function degToCompass(deg){
@@ -704,8 +737,9 @@ async function renderAll(entries){
       const label = mm === '00' ? hh : '';
       const src = r.VerdictSource || 'unknown';
       const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
-      const reasons = reasonsForCsvRow(r).join('; ');
-      return `<div class="strip-item ${cls}" title="${hh}:${mm} local \u2014 ${r.Verdict}${'\u000A'}${windInfo}${'\u000A'}reason: ${reasons}">
+     const reasons = reasonsForCsvRow(r).join('; ');
+      const detailText = `${hh}:${mm} local \u2014 ${r.Verdict}\n${windInfo}\nreason: ${reasons}`;
+      return `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}">
         <div class="bar"></div>
         <div class="t mono">${label}</div>
       </div>`;
@@ -713,7 +747,9 @@ async function renderAll(entries){
   }
   html += `<div class="section">
     <div class="section-title"><span>Past 24 hours (actual)</span><span style="color:var(--dim); font-weight:400; text-transform:none; letter-spacing:0;">logged conditions \u2014 station where available, forecast fallback otherwise</span></div>
-    <div class="strip">${pastStripHtml}</div>
+    <div class="strip" id="pastStrip">${pastStripHtml}</div>
+    <div class="strip-detail" id="pastStripDetail"></div>
+    <div class="strip-hint">tap a block for the reason</div>
   </div>`;
 
   const times = h.time;
@@ -724,14 +760,18 @@ async function renderAll(entries){
     const cls = levelClass(vv.level);
     const dt = new Date(Date.parse(times[i]));
     const hourLabel = dt.toLocaleString("en-US",{timeZone:TZ, hour:'2-digit', hour12:false});
-    stripHtml += `<div class="strip-item ${cls}" title="${hourLabel}:00 - ${vv.level}">
+   const reasonText = vv.reasons.length ? vv.reasons.join('; ') : 'all parameters within standard VFR minima';
+    const detailText = `${hourLabel}:00 local \u2014 ${vv.level.toUpperCase()}\n${fc.windDir}\u00b0/${fc.windSpeed}G${fc.gust}kt \u00b7 ${fc.ceilingFt===null?'clear':fc.ceilingFt+'ft'} ceiling \u00b7 ${fc.visKm}km vis \u00b7 ${fc.precip}\nreason: ${reasonText}`;
+    stripHtml += `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}">
       <div class="bar"></div>
       <div class="t mono">${hourLabel}</div>
     </div>`;
   }
   html += `<div class="section">
     <div class="section-title"><span>24-hour forecast outlook</span><span style="color:var(--dim); font-weight:400; text-transform:none; letter-spacing:0;">model-derived, hourly</span></div>
-    <div class="strip">${stripHtml}</div>
+    <div class="strip" id="forecastStrip">${stripHtml}</div>
+    <div class="strip-detail" id="forecastStripDetail"></div>
+    <div class="strip-hint">tap a block for the reason</div>
   </div>`;
 
   const todayDateStr = now.dateStr;
@@ -887,8 +927,11 @@ async function renderAll(entries){
       histDateEl.value = d;
       renderHistoryDay(d);
     });
-    renderHistoryDay(histDateEl.value);
+   renderHistoryDay(histDateEl.value);
   }
+
+  wireStripTaps('pastStrip', 'pastStripDetail');
+  wireStripTaps('forecastStrip', 'forecastStripDetail');
 }
 
 function parseCsv(text){
@@ -924,7 +967,7 @@ async function renderAutomatedHistory(){
       return `<tr><td>${r.LocalTime}</td><td>${wind}</td><td>${vis}</td><td>${ceiling}${ceiling!=='clear'?'ft':''}</td><td>${precip}</td><td class="badge-${vClass}">${r.Verdict}</td><td style="color:var(--dim); font-size:9px;">${srcTag}</td></tr>`;
     }).join('');
     holder.innerHTML = `<div class="section">
-      <div class="section-title"><span>Automated forecast &amp; station history</span><span style="text-transform:none; letter-spacing:0;">logged by GitHub Actions every ~30min, independent of this page being open</span></div>
+      <div class="section-title"><span>Automated forecast &amp; station history</span><span style="text-transform:none; letter-spacing:0;">logged every ~30min by a Cloudflare Worker, independent of this page being open</span></div>
       <table class="logtbl"><thead><tr><th>Time</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th><th>Source</th></tr></thead>
       <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:16px;">No automated entries yet</td></tr>'}</tbody></table>
       <div class="disclaimer" style="margin-top:8px;">"station" rows use actual wind/temp/dew point from the on-site iWeathar sensor (visibility &amp; precip still come from the forecast model, since the station doesn't measure those). "forecast" rows mean the station was offline or unreachable at that check, so it fell back to model data entirely.</div>
