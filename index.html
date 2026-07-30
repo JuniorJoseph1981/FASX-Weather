@@ -144,13 +144,13 @@
 
   .strip{display:flex; gap:3px; overflow-x:auto; padding-bottom:6px;}
   .strip-item{
-    flex:0 0 auto; width:34px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer;
+    flex:0 0 auto; width:40px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer;
   }
   .strip-item .bar{width:16px; height:34px; border-radius:2px; transition:box-shadow 0.15s;}
   .strip-item.f .bar{background:var(--green);}
   .strip-item.c .bar{background:var(--amber);}
   .strip-item.n .bar{background:var(--red);}
-  .strip-item .t{font-size:9px; color:var(--dim);}
+  .strip-item .t{font-size:8px; color:var(--dim); white-space:nowrap;}
   .strip-item.selected .bar{box-shadow:0 0 0 2px var(--text);}
   .strip-detail{
     display:none; margin-top:10px; padding:10px 12px; background:var(--panel-2); border:1px solid var(--line);
@@ -317,6 +317,9 @@ function csvVerdictClass(v){
 }
 
 function parseFasxLocal(timeStr){
+  // timeStr like "2026-07-29T14:00", Africa/Johannesburg wall-clock time,
+  // fixed UTC+2 (no DST) -- append offset so Date.parse gives a correct
+  // absolute instant regardless of the viewer's own browser timezone.
   return Date.parse(timeStr + '+02:00');
 }
 
@@ -377,7 +380,7 @@ function renderHistoryDay(dateStr){
     const cls = csvVerdictClass(r.Verdict);
     const timePart = (r.LocalTime.split('T')[1]||'00:00');
     const [hh,mm] = timePart.split(':');
-    const label = mm==='00' ? hh : '';
+    const label = mm==='00' ? hh : hh+':'+mm;
     const fromStation = r.VerdictSource === "station";
     const windTip = fromStation
       ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)`
@@ -463,6 +466,8 @@ function windArrowSvg(dirDeg, size){
   const cx = size/2, cy = size/2;
   const rot = dirDeg + 180;
 
+  // Runway centerlines, drawn at their true headings (bidirectional lines
+  // through the center) rather than a decorative fixed tilt.
   const rwyLines = RUNWAYS.map(rwy => {
     const [x1,y1] = headingPoint(cx, cy, r*0.88, rwy.hdg);
     const [x2,y2] = headingPoint(cx, cy, r*0.88, rwy.hdg+180);
@@ -581,7 +586,8 @@ async function fetchLiveStation(){
     return {
       gust: Math.round(gust), windSpeed: Math.round(windSpeed), dirCompass: data.dirCompass || "",
       temp, dew, ceilingFt: (data.stationCeilingFt === null || data.stationCeilingFt === undefined) ? null : data.stationCeilingFt,
-      precip: precipCategory(parseFloat(data.rainRateMmHr)||0), time: data.stationTime, ageMin, live: true
+      precip: precipCategory(parseFloat(data.rainRateMmHr)||0), time: data.stationTime, ageMin, live: true,
+      qnh: (data.qnhHpa === null || data.qnhHpa === undefined || isNaN(parseFloat(data.qnhHpa))) ? null : Math.round(parseFloat(data.qnhHpa))
     };
   }catch(e){ return null; }
 }
@@ -722,6 +728,11 @@ async function renderAll(entries){
   const h = hourlyCache.hourly;
   const cloud = h.cloud_cover[nowIdxCache];
 
+  // Prefer a fresh automated station reading over the forecast model wherever
+  // the station actually measures the thing in question. Visibility and QNH
+  // stay forecast-only: the station has no visibility sensor, and its raw
+  // pressure reading isn't confirmed to be corrected to sea level, so showing
+  // it as QNH could be actively misleading for an altimeter setting.
   const liveWindDir = autoStation ? compassToDeg(autoStation.dirCompass) : fcNow.windDir;
   const liveWindSpeed = autoStation ? autoStation.windSpeed : fcNow.windSpeed;
   const liveGust = autoStation ? autoStation.gust : fcNow.gust;
@@ -732,6 +743,14 @@ async function renderAll(entries){
   const windTag = autoStation
     ? (autoStation.live ? `live station, sensor ${autoStation.ageMin}min old` : `station log, ${autoStation.ageMin}min ago`)
     : "forecast";
+
+  // QNH is only ever computed properly when a *live* fetch succeeds (the
+  // 30-min batch log doesn't carry pressure/elevation), since it needs a
+  // real barometric reduction using the station's own elevation and
+  // temperature -- a raw station pressure reading alone isn't QNH.
+  const hasLiveQnh = autoStation && autoStation.live && autoStation.qnh !== null && autoStation.qnh !== undefined;
+  const liveQnh = hasLiveQnh ? autoStation.qnh : fcNow.qnh;
+  const qnhTag = hasLiveQnh ? `live station, sensor ${autoStation.ageMin}min old` : "forecast";
 
   const windFlag = liveGust>CRIT.windNoFly?"bad":(liveGust>CRIT.windCaution?"warn":"ok");
   const ceilFlag = liveCeilingFt===null ? "ok" : (liveCeilingFt<CRIT.ceilNoFly?"bad":(liveCeilingFt<CRIT.ceilCaution?"warn":"ok"));
@@ -771,9 +790,9 @@ async function renderAll(entries){
       <div class="flag ok">${autoStation ? 'station' : 'model-derived'}</div>
     </div>
     <div class="card">
-      <div class="k">QNH (forecast)</div>
-      <div class="v mono">${fcNow.qnh===null?'n/a':fcNow.qnh}<span class="unit">hPa</span></div>
-      <div class="sub">mean-sea-level pressure, model-derived &mdash; station reading not confirmed sea-level-corrected</div>
+      <div class="k">QNH (${qnhTag})</div>
+      <div class="v mono">${liveQnh===null?'n/a':liveQnh}<span class="unit">hPa</span></div>
+      <div class="sub">${hasLiveQnh ? 'reduced from station pressure using its own elevation &amp; temperature' : 'mean-sea-level pressure, model-derived'}</div>
       <div class="flag ok">altimeter setting est.</div>
     </div>
   </div>`;
@@ -804,7 +823,7 @@ async function renderAll(entries){
       const cls = csvVerdictClass(r.Verdict);
       const [datePart, timePart] = r.LocalTime.split('T');
       const [hh, mm] = (timePart||'00:00').split(':');
-      const label = mm === '00' ? hh : '';
+      const label = mm === '00' ? hh : hh+':'+mm;
       const src = r.VerdictSource || 'unknown';
       const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
       const reasons = reasonsForCsvRow(r).join('; ');
