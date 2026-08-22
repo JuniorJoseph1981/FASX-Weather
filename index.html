@@ -706,9 +706,10 @@ async function renderAircraftStatus() {
         <button class="ac-toggle-btn" data-ac="${id}" style="width:100%;">${isGrounded ? 'Mark serviceable' : 'Ground aircraft'}</button>
       </div>
       <div id="ac_form_${id}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
           <div class="field"><label>${isGrounded ? 'Serviceable date' : 'Grounded date'}</label><input type="date" id="ac_date_${id}" value="${todayStr}"></div>
           <div class="field"><label>Note</label><input type="text" id="ac_note_${id}" placeholder="${isGrounded ? 'e.g. inspection complete' : 'e.g. annual inspection'}"></div>
+          <div class="field"><label>Password</label><input type="password" id="ac_pass_${id}" placeholder="required"></div>
         </div>
         <button class="primary ac-submit-btn" data-ac="${id}" data-reg="${ac.reg}" data-grounded="${isGrounded}">${isGrounded ? 'Confirm serviceable' : 'Confirm grounded'}</button>
         <span id="ac_status_${id}" style="font-size:11px; color:var(--dim); margin-left:8px;"></span>
@@ -764,8 +765,11 @@ async function renderAircraftStatus() {
       const isGrounded = btn.dataset.grounded === 'true';
       const date = document.getElementById('ac_date_' + id).value;
       const note = document.getElementById('ac_note_' + id).value;
+      const passEl = document.getElementById('ac_pass_' + id);
+      const password = passEl.value;
       const statusEl = document.getElementById('ac_status_' + id);
       if (!date) { statusEl.textContent = 'Pick a date first.'; return; }
+      if (!password) { statusEl.textContent = 'Enter the password first.'; return; }
       if (!WORKER_URL) { statusEl.textContent = 'Not configured.'; return; }
       btn.disabled = true;
       statusEl.textContent = 'saving...';
@@ -774,14 +778,15 @@ async function renderAircraftStatus() {
         const res = await fetch(WORKER_URL + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ registration: reg, date, note }),
+          body: JSON.stringify({ registration: reg, date, note, password }),
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
           aircraftRows = await loadAircraftRows();
           renderAircraftStatus();
         } else {
-          statusEl.textContent = 'Failed: ' + (data.error || res.status);
+          statusEl.textContent = res.status === 401 ? 'Incorrect password.' : 'Failed: ' + (data.error || res.status);
+          passEl.value = '';
           btn.disabled = false;
         }
       } catch (e) {
