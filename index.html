@@ -781,7 +781,12 @@ async function renderAircraftStatus() {
           body: JSON.stringify({ registration: reg, date, note, password }),
         });
         const data = await res.json().catch(() => ({}));
-        if (res.ok && data.ok) {
+        if (isGrounded) {
+            const matches = aircraftRows.filter(r => r.Registration === reg && (!r.UngroundedDate || r.UngroundedDate === '')).sort((a,b) => a.GroundedDate.localeCompare(b.GroundedDate));
+            if (matches.length > 0) { const last = matches[matches.length - 1]; last.UngroundedDate = date; last.UngroundedNote = note; }
+          } else {
+            aircraftRows.push({ Registration: reg, GroundedDate: date, GroundedNote: note, UngroundedDate: '', UngroundedNote: '', LoggedAt: '' });
+          }
           aircraftRows = await loadAircraftRows();
           renderAircraftStatus();
         } else {
