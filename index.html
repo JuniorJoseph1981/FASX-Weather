@@ -246,7 +246,8 @@
     <div class="loading">Pulling model data for FASX&hellip;</div>
   </div>
 
-  <div id="autoHistoryHolder"></div>
+    <div id="aircraftHolder"></div>
+<div id="autoHistoryHolder"></div>
   <div id="manualHistoryHolder"></div>
 
 </div>
@@ -276,6 +277,14 @@ let hourlyCache = null;
 let nowIdxCache = null;
 let scheduleCache = [];
 let historyRows = [];
+
+const AIRCRAFT_STATUS_CSV_URL = "https://raw.githubusercontent.com/JuniorJoseph1981/FASX-Weather/main/data/aircraft_status.csv";
+const AIRCRAFT = [
+  { reg: "ZS-JOG", type: "Cessna 172N" },
+  { reg: "ZS-ESE", type: "Siai-Marchetti S205-20R" },
+  // Add future aircraft here, e.g.: { reg: "ZU-FZS", type: "Partenavia P.64B" },
+];
+let aircraftRows = [];
 
 function reasonsForCsvRow(r){
   const fromStation = r.VerdictSource === "station";
@@ -617,6 +626,186 @@ function latestStationReading(maxAgeMs){
     gust: Math.round(gust), windSpeed: Math.round(windSpeed), dirCompass, temp, dew,
     ceilingFt, precip, time: best.LocalTime, ageMin: Math.round((nowMs-bestT)/60000)
   };
+}
+
+function sanitizeId(s) {
+  return String(s).replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+function daysInMonth(yearMonth) {
+  const [y, m] = yearMonth.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+function getAircraftStatus(reg) {
+  const matches = aircraftRows.filter(r => r.Registration === reg)
+    .sort((a, b) => a.GroundedDate.localeCompare(b.GroundedDate));
+  if (matches.length === 0) return { status: 'serviceable' };
+  const last = matches[matches.length - 1];
+  if (!last.UngroundedDate || last.UngroundedDate === '') {
+    return { status: 'grounded', since: last.GroundedDate, note: last.GroundedNote };
+  }
+  return { status: 'serviceable' };
+}
+
+function computeMonthAvailability(reg, yearMonth, todayStr) {
+  const monthStart = `${yearMonth}-01`;
+  const dim = daysInMonth(yearMonth);
+  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
+  const clamp = (d) => d < monthStart ? monthStart : (d > monthEnd ? monthEnd : d);
+  const toDayNum = (d) => Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(monthStart + 'T00:00:00Z')) / 86400000) + 1;
+
+  let groundedDays = 0;
+  const matches = aircraftRows.filter(r => r.Registration === reg);
+  for (const r of matches) {
+    let start = r.GroundedDate;
+    let end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : (todayStr > monthEnd ? monthEnd : todayStr);
+    if (end < monthStart || start > monthEnd) continue;
+    start = clamp(start);
+    end = clamp(end);
+    groundedDays += Math.max(0, toDayNum(end) - toDayNum(start) + 1);
+  }
+  const availableDays = Math.max(0, dim - groundedDays);
+  return { daysInMonth: dim, groundedDays, availableDays };
+}
+
+async function loadAircraftRows() {
+  if (!AIRCRAFT_STATUS_CSV_URL) return [];
+  try {
+    const res = await fetch(AIRCRAFT_STATUS_CSV_URL + (AIRCRAFT_STATUS_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now());
+    if (!res.ok) return [];
+    const text = await res.text();
+    return parseCsv(text);
+  } catch (e) { return []; }
+}
+
+async function renderAircraftStatus() {
+  const holder = document.getElementById('aircraftHolder');
+  if (!holder) return;
+  const todayStr = localNow().dateStr;
+  const defaultMonth = todayStr.slice(0, 7);
+
+  let cardsHtml = AIRCRAFT.map(ac => {
+    const st = getAircraftStatus(ac.reg);
+    const id = sanitizeId(ac.reg);
+    const isGrounded = st.status === 'grounded';
+    const badgeClass = isGrounded ? 'bad' : 'ok';
+    const badgeText = isGrounded ? 'GROUNDED' : 'SERVICEABLE';
+    const subText = isGrounded ? `since ${st.since}${st.note ? ' \u2014 ' + st.note : ''}` : 'available to fly';
+
+    return `<div class="card" style="align-items:stretch; text-align:left;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+        <div>
+          <div class="v mono" style="font-size:18px;">${ac.reg}</div>
+          <div class="sub">${ac.type}</div>
+        </div>
+        <div class="flag ${badgeClass}" style="margin-top:0;">${badgeText}</div>
+      </div>
+      <div class="sub" style="margin-top:8px; text-align:left;">${subText}</div>
+      <div style="margin-top:10px;">
+        <button class="ac-toggle-btn" data-ac="${id}" style="width:100%;">${isGrounded ? 'Mark serviceable' : 'Ground aircraft'}</button>
+      </div>
+      <div id="ac_form_${id}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="field"><label>${isGrounded ? 'Serviceable date' : 'Grounded date'}</label><input type="date" id="ac_date_${id}" value="${todayStr}"></div>
+          <div class="field"><label>Note</label><input type="text" id="ac_note_${id}" placeholder="${isGrounded ? 'e.g. inspection complete' : 'e.g. annual inspection'}"></div>
+        </div>
+        <button class="primary ac-submit-btn" data-ac="${id}" data-reg="${ac.reg}" data-grounded="${isGrounded}">${isGrounded ? 'Confirm serviceable' : 'Confirm grounded'}</button>
+        <span id="ac_status_${id}" style="font-size:11px; color:var(--dim); margin-left:8px;"></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  let historyRowsHtml = aircraftRows.slice().sort((a, b) => b.GroundedDate.localeCompare(a.GroundedDate)).slice(0, 15).map(r => {
+    const dur = r.UngroundedDate
+      ? Math.round((Date.parse(r.UngroundedDate + 'T00:00:00Z') - Date.parse(r.GroundedDate + 'T00:00:00Z')) / 86400000) + 1
+      : null;
+    const durText = dur === null ? 'ongoing' : `${dur} day${dur === 1 ? '' : 's'}`;
+    return `<tr><td>${r.Registration}</td><td>${r.GroundedDate}</td><td>${r.UngroundedDate || '\u2014'}</td><td>${durText}</td><td>${r.GroundedNote || ''}</td></tr>`;
+  }).join('');
+
+  const monthOptions = AIRCRAFT.map(ac => `<option value="${ac.reg}">${ac.reg}</option>`).join('');
+
+  holder.innerHTML = `<div class="section">
+    <div class="section-title">Aircraft Status</div>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr);">${cardsHtml}</div>
+  </div>
+  <div class="section">
+    <details>
+      <summary><span class="section-title"><span>Grounding history &amp; monthly availability</span><span style="text-transform:none; letter-spacing:0;">for month-end flying-day calculations</span></span></summary>
+      <div style="margin-top:14px;">
+        <table class="logtbl" style="margin-bottom:16px;">
+          <thead><tr><th>Aircraft</th><th>Grounded</th><th>Back in service</th><th>Duration</th><th>Reason</th></tr></thead>
+          <tbody>${historyRowsHtml || '<tr><td colspan="5" style="text-align:center; padding:16px;">No grounding records yet</td></tr>'}</tbody>
+        </table>
+        <div style="font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); margin-bottom:8px;">Monthly availability</div>
+        <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
+          <div class="field"><label>Aircraft</label><select id="avail_reg">${monthOptions}</select></div>
+          <div class="field"><label>Month</label><input type="month" id="avail_month" value="${defaultMonth}"></div>
+          <button id="avail_calc_btn" class="primary">Calculate</button>
+        </div>
+        <div id="avail_result"></div>
+      </div>
+    </details>
+  </div>`;
+
+  holder.querySelectorAll('.ac-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.ac;
+      const form = document.getElementById('ac_form_' + id);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+
+  holder.querySelectorAll('.ac-submit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.ac;
+      const reg = btn.dataset.reg;
+      const isGrounded = btn.dataset.grounded === 'true';
+      const date = document.getElementById('ac_date_' + id).value;
+      const note = document.getElementById('ac_note_' + id).value;
+      const statusEl = document.getElementById('ac_status_' + id);
+      if (!date) { statusEl.textContent = 'Pick a date first.'; return; }
+      if (!WORKER_URL) { statusEl.textContent = 'Not configured.'; return; }
+      btn.disabled = true;
+      statusEl.textContent = 'saving...';
+      try {
+        const endpoint = isGrounded ? '/aircraft-unground' : '/aircraft-ground';
+        const res = await fetch(WORKER_URL + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registration: reg, date, note }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          aircraftRows = await loadAircraftRows();
+          renderAircraftStatus();
+        } else {
+          statusEl.textContent = 'Failed: ' + (data.error || res.status);
+          btn.disabled = false;
+        }
+      } catch (e) {
+        statusEl.textContent = 'Failed: ' + e.message;
+        btn.disabled = false;
+      }
+    });
+  });
+
+  const calcBtn = document.getElementById('avail_calc_btn');
+  if (calcBtn) {
+    calcBtn.addEventListener('click', () => {
+      const reg = document.getElementById('avail_reg').value;
+      const month = document.getElementById('avail_month').value;
+      const resultEl = document.getElementById('avail_result');
+      if (!month) { resultEl.innerHTML = '<div class="disclaimer">Pick a month first.</div>'; return; }
+      const r = computeMonthAvailability(reg, month, todayStr);
+      resultEl.innerHTML = `<div class="thresholds">
+        <b>${reg}</b> &mdash; ${month}: <b>${r.daysInMonth}</b> days in month,
+        <b class="badge-n">${r.groundedDays}</b> grounded,
+        <b class="badge-f">${r.availableDays}</b> available to fly
+      </div>`;
+    });
+  }
 }
 
 async function renderAll(entries){
@@ -974,6 +1163,7 @@ async function renderAll(entries){
     await renderAll(fresh);
     renderAutomatedHistory();
     renderManualHistory();
+    renderAircraftStatus();
 
     if(WORKER_URL && githubStatus !== 'synced'){
       alert('Saved locally, but GitHub sync failed (' + githubStatus + '). Use "download log CSV" as a backup so this entry isn\'t lost.');
@@ -1112,6 +1302,7 @@ async function load(){
     nowIdxCache = nowIdx;
     scheduleCache = computeSchedule(data.daily.sunset[0]);
     historyRows = await loadHistoryRows();
+    aircraftRows = await loadAircraftRows();
     const nowForThrottle = Date.now();
     if(!lastLiveFetchAt || (nowForThrottle - lastLiveFetchAt) > 20000){
       liveStationReading = await fetchLiveStation();
@@ -1122,6 +1313,7 @@ async function load(){
     await renderAll(entries);
     renderAutomatedHistory();
     renderManualHistory();
+    renderAircraftStatus();
 
   }catch(e){
     app.innerHTML = `<div class="err">Could not reach the weather service (${e.message}). Check your connection and press refresh.</div>`;
