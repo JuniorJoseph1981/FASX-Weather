@@ -1095,7 +1095,7 @@ async function renderAll(entries){
   </div>`;
 
   const rwyNotes = {"15/33": "asphalt/grass, primary", "06/24": "grass only, no lighting"};
-  const xwindRows = RUNWAYS.map(rwy => {
+   const xwindRows = RUNWAYS.filter(rwy => rwy.name === "15/33").map(rwy => {
     const xw = crosswind(liveWindDir, liveGust, rwy.hdg);
     return `<b>RWY ${rwy.name}</b> (${rwyNotes[rwy.name]||''}) &mdash; ${xw} kt crosswind at current gust`;
   }).join('<br>\n      ');
