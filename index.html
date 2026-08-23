@@ -813,7 +813,7 @@ async function renderAircraftStatus() {
           } else {
             aircraftRows.push({ Registration: reg, GroundedDate: date, GroundedNote: note, UngroundedDate: '', UngroundedNote: '', LoggedAt: '' });
           }
-          aircraftRows = await loadAircraftRows();
+         
           renderAircraftStatus();
         } else {
           statusEl.textContent = res.status === 401 ? 'Incorrect password.' : 'Failed: ' + (data.error || res.status);
@@ -1341,8 +1341,7 @@ async function load(){
     nowIdxCache = nowIdx;
     scheduleCache = computeSchedule(data.daily.sunset[0]);
     historyRows = await loadHistoryRows();
-    aircraftRows = await loadAircraftRows();
-    const nowForThrottle = Date.now();
+        const nowForThrottle = Date.now();
     if(!lastLiveFetchAt || (nowForThrottle - lastLiveFetchAt) > 20000){
       liveStationReading = await fetchLiveStation();
       lastLiveFetchAt = nowForThrottle;
