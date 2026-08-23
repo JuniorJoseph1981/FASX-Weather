@@ -649,6 +649,29 @@ function getAircraftStatus(reg) {
 }
 
 function computeMonthAvailability(reg, yearMonth, todayStr) {
+  const dim = daysInMonth(yearMonth);
+  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
+  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
+  const isGroundedOnDay = (dayStr) => aircraftRows.some(r => {
+    if (r.Registration !== reg) return false;
+    const start = r.GroundedDate;
+    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
+    if (end === null) return dayStr >= start;
+    return dayStr >= start && dayStr < end;
+  });
+  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
+  for (let d = 1; d <= dim; d++) {
+    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
+    if (dayStr > lastDay) break;
+    daysChecked++;
+    if (isGroundedOnDay(dayStr)) { groundedDays++; continue; }
+    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
+    if (dayRows.length === 0) { noDataDays++; continue; }
+    const flyableHours = dayRows.filter(r => r.Verdict !== 'NO-FLY').length * 0.5;
+    if (flyableHours < 4) { weatherBadDays++; } else { availableDays++; }
+  }
+  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays };
+}function computeMonthAvailability(reg, yearMonth, todayStr) {
   const monthStart = `${yearMonth}-01`;
   const dim = daysInMonth(yearMonth);
   const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
@@ -827,24 +850,24 @@ async function renderAircraftStatus() {
     });
   });
 
-  const calcBtn = document.getElementById('avail_calc_btn');
-  if (calcBtn) {
-    calcBtn.addEventListener('click', () => {
-      const reg = document.getElementById('avail_reg').value;
-      const month = document.getElementById('avail_month').value;
-      const resultEl = document.getElementById('avail_result');
-      if (!month) { resultEl.innerHTML = '<div class="disclaimer">Pick a month first.</div>'; return; }
-      const r = computeMonthAvailability(reg, month, todayStr);
-      resultEl.innerHTML = `<div class="thresholds">
-        <b>${reg}</b> &mdash; ${month}: <b>${r.daysInMonth}</b> days in month (${r.daysChecked} checked),
-        <b class="badge-n">${r.groundedDays}</b> grounded,
-      <b class="badge-c">${r.weatherBadDays}</b> weather below minimums,
-      ${r.noDataDays ? `<b>${r.noDataDays}</b> no weather logged, ` : ''}
-        <b class="badge-f">${r.availableDays}</b> available to fly
-      </div>
-    <div class="disclaimer" style="margin-top:6px;">"Available" requires no grounding and at least 4 logged non-NO-FLY hours that day.</div>`;
-    });
-  }
+      const calcBtn = document.getElementById('avail_calc_btn');
+    if (calcBtn) {
+      calcBtn.addEventListener('click', () => {
+        const reg = document.getElementById('avail_reg').value;
+        const month = document.getElementById('avail_month').value;
+        const resultEl = document.getElementById('avail_result');
+        if (!month) { resultEl.innerHTML = '<div class="disclaimer">Pick a month first.</div>'; return; }
+        const r = computeMonthAvailability(reg, month, todayStr);
+        resultEl.innerHTML = `<div class="thresholds">
+          <b>${reg}</b> &mdash; ${month}: <b>${r.daysInMonth}</b> days in month (${r.daysChecked} checked),
+          <b class="badge-n">${r.groundedDays}</b> grounded,
+          <b class="badge-c">${r.weatherBadDays}</b> weather below minimums,
+          ${r.noDataDays ? `<b>${r.noDataDays}</b> no weather logged, ` : ''}
+          <b class="badge-f">${r.availableDays}</b> available to fly
+        </div>
+        <div class="disclaimer" style="margin-top:6px;">"Available" requires no grounding and at least 4 logged non-NO-FLY hours that day \u2014 a day that's both grounded and has bad weather only counts once.</div>`;
+      });
+    }
 }
 
 async function renderAll(entries){
