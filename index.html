@@ -1460,7 +1460,46 @@ function computeMonthAvailability(reg, yearMonth, todayStr) {
     }
   }
   return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays, groundedDetail, weatherBadDetail, noDataDetail };
-}document.getElementById('refreshBtn').addEventListener('click', load);
+}
+  function computeMonthAvailability(reg, yearMonth, todayStr) {
+  const dim = daysInMonth(yearMonth);
+  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
+  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
+  const groundingFor = (dayStr) => aircraftRows.find(r => {
+    if (r.Registration !== reg) return false;
+    const start = r.GroundedDate;
+    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
+    if (end === null) return dayStr >= start;
+    return dayStr >= start && dayStr < end;
+  });
+  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
+  const groundedDetail = [], weatherBadDetail = [], noDataDetail = [];
+  for (let d = 1; d <= dim; d++) {
+    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
+    if (dayStr > lastDay) break;
+    daysChecked++;
+    const grounding = groundingFor(dayStr);
+    if (grounding) { groundedDays++; groundedDetail.push(`${dayStr} \u2014 ${grounding.GroundedNote || 'no note'}`); continue; }
+    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
+    if (dayRows.length === 0) { noDataDays++; noDataDetail.push(dayStr); continue; }
+    const flyableCount = dayRows.filter(r => r.Verdict !== 'NO-FLY').length;
+    const flyableHours = flyableCount * 0.5;
+    if (flyableHours < 4) {
+      weatherBadDays++;
+      const noFlyRows = dayRows.filter(r => r.Verdict === 'NO-FLY');
+      const reasonSet = new Set();
+      noFlyRows.forEach(r => reasonsForCsvRow(r).forEach(reason => reasonSet.add(reason)));
+      const reasonText = reasonSet.size > 0
+        ? Array.from(reasonSet).join('; ')
+        : `only ${dayRows.length} check(s) logged that day, not enough data to confirm`;
+      weatherBadDetail.push(`${dayStr} \u2014 ${flyableHours}h flyable \u2014 ${reasonText}`);
+    } else {
+      availableDays++;
+    }
+  }
+  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays, groundedDetail, weatherBadDetail, noDataDetail };
+}
+  document.getElementById('refreshBtn').addEventListener('click', load);
 load();
 </script>
 
