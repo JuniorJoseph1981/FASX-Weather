@@ -3978,3 +3978,4 @@ LocalTime,Fc_WindDir,Fc_WindSpeed_kt,Fc_Gust_kt,Fc_Visibility_km,Fc_CeilingEst_f
 2026-10-22T17:30,234,8,21,49.9,,None,18.3,9.1,22,UNREACHABLE,,,,,,,,,,,,CAUTION,forecast
 2026-10-22T18:00,234,8,21,49.9,,None,18.3,9.1,22,UNREACHABLE,,,,,,,,,,,,CAUTION,forecast
 2026-10-22T18:30,235,5,17,46.3,2850,None,16.5,9.4,44,UNREACHABLE,,,,,,,,,,,,CAUTION,forecast
+2026-10-22T19:00,235,5,17,46.3,2850,None,16.5,9.4,44,UNREACHABLE,,,,,,,,,,,,CAUTION,forecast
