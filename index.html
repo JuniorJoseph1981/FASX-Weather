@@ -306,7 +306,7 @@
   .pd-reason{font-size:13px; color:var(--sub); margin-bottom:10px;}
   .kv{display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
   .kv:last-of-type{border-bottom:0;}
-  .kv span{color:var(--sub);} .kv b{text-align:right;}
+  .kv span{color:var(--sub);} .kv b{text-align:right; white-space:nowrap;}
 
   /* ===== calendar ===== */
   .cal-nav{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
@@ -323,6 +323,48 @@
   .cal-d:hover{border:0;}
   .cal-d.x:hover,.cal-d.p:hover{border:1px solid var(--dim);}
   .day-head{font-size:15px; font-weight:700; margin-bottom:8px;}
+
+  /* ===== owner / contract ===== */
+  .tabbar .tab[hidden]{display:none;}
+  .tabbar .tab{min-width:0;}
+  .ct-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
+  .pill{font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px;}
+  .pill.ok{background:var(--green-dim); color:var(--green);}
+  .ct-card{cursor:pointer; align-items:stretch; text-align:left; margin-bottom:10px;}
+  .ct-card.bad{border-color:var(--red-line);}
+  .ct-card.na{opacity:.6; cursor:default;}
+  .ct-card .mrow, .ct-result .mrow{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .ct-math{font-size:12px; color:var(--sub); margin:4px 0 8px; line-height:1.5;}
+  .ct-math code{font-family:'JetBrains Mono',monospace; color:var(--text);}
+  .ct-bar{height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin:4px 0;}
+  .ct-bar i{display:block; height:100%; border-radius:4px;}
+  .res{display:flex; justify-content:space-between; gap:8px; font-size:12.5px; flex-wrap:wrap;}
+  .ct-tap{font-size:11px; color:var(--cyan); margin-top:8px;}
+  .ct-chip{font-size:11px; padding:3px 9px; border-radius:99px; background:var(--panel-2); color:var(--sub);}
+  .ct-chip.warn{background:var(--amber-dim); color:var(--amber);}
+  .ct-dim{color:var(--dim); font-size:12px;}
+  .ct-result{align-items:stretch; text-align:left;}
+  .ct-result.bad{background:var(--red-dim); border-color:var(--red-line);}
+  .ct-result.ok{background:var(--green-dim); border-color:var(--green-line);}
+  .ct-rl{font-size:11px; letter-spacing:1.5px; color:var(--sub); margin-bottom:4px;}
+  .big{font-size:26px; font-weight:800;}
+  .ct-cal{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .ct-h{font-size:11px; color:var(--dim); text-align:center;}
+  .ct-d{aspect-ratio:1; min-height:0; padding:0; border:0; border-radius:8px; font-size:13px; font-weight:700; color:var(--on-fill); position:relative;
+    background:var(--fill-g);}
+  .ct-d.maint{background:var(--fill-r);} .ct-d.weather{background:var(--fill-a);} .ct-d.forced-off{background:var(--fill-a); outline:2px dashed var(--text); outline-offset:-3px;}
+  .ct-d.forced-on{background:var(--fill-g); outline:2px dashed var(--text); outline-offset:-3px;}
+  .ct-d.nodata, .ct-d.pending, .ct-d.future{background:var(--panel-2); color:var(--dim); border:1px solid var(--line);}
+  .ct-d.before{background:transparent; color:var(--line); border:1px solid var(--line);}
+  .ct-d:hover{border:0;} .ct-d.nodata:hover,.ct-d.pending:hover,.ct-d.future:hover{border:1px solid var(--dim);}
+  .ct-calc{margin-top:8px;}
+  .sheet-body .card{align-items:stretch; text-align:left;}
+  body.on-contract .fab{display:none;}
+  body.on-contract{padding-bottom:90px;}
+  .ct-acrow{display:grid; grid-template-columns:90px 1fr 140px auto; gap:8px; align-items:center; margin-bottom:8px;}
+  @media (max-width:560px){ .ct-acrow{grid-template-columns:1fr 1fr;} .ct-acrow > b{grid-column:1 / -1;} }
+  .fld{display:flex; gap:10px;} .fld > div{flex:1; min-width:0;}
+  input.f{width:100%; min-width:0; padding:10px; font-size:15px; margin-top:4px;}
 </style>
 <script>
 (function(){
@@ -378,6 +420,10 @@
       <div id="aircraftHolder"></div>
     </section>
 
+    <section id="tab-contract" class="panel">
+      <div id="contractHolder"></div>
+    </section>
+
     <section id="tab-history" class="panel">
       <div id="calHolder"></div>
       <div id="pastHolder"></div>
@@ -395,9 +441,23 @@
   <button type="button" class="tab" data-tab="plan" role="tab" aria-selected="false"><i aria-hidden="true">&#9636;</i><span>Plan</span></button>
   <button type="button" class="tab" data-tab="fleet" role="tab" aria-selected="false"><i aria-hidden="true">&#9992;</i><span>Fleet</span></button>
   <button type="button" class="tab" data-tab="history" role="tab" aria-selected="false"><i aria-hidden="true">&#9776;</i><span>History</span></button>
+  <button type="button" class="tab" data-tab="contract" role="tab" aria-selected="false" hidden><i aria-hidden="true">&#128274;</i><span>Contract</span></button>
 </nav>
 
 <div class="sheet-back" id="logSheet" hidden><div class="sheet-body" id="logSheetBody" role="dialog" aria-modal="true" aria-label="Log a check"></div></div>
+<div class="sheet-back" id="unlockSheet" hidden><div class="sheet-body" role="dialog" aria-modal="true" aria-label="Owner login">
+  <div class="sheet-head"><b>&#128274; Owner login</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+  <div class="disclaimer" style="font-size:12px;">Private contract figures. Enter the same password you use to ground and release aircraft. It is checked by the server every time &mdash; the figures are never in this public page.</div>
+  <form id="unlockForm" autocomplete="on" style="margin-top:12px;">
+    <input type="text" name="username" value="owner" autocomplete="username" hidden>
+    <label for="unlockPw">Password</label>
+    <input id="unlockPw" type="password" autocomplete="current-password" style="width:100%; padding:12px; font-size:16px;">
+    <button id="unlockBtn" type="submit" class="primary" style="width:100%; margin-top:12px; padding:12px;">Unlock</button>
+    <div id="unlockMsg" class="hint" role="status"></div>
+  </form>
+</div></div>
+<div class="sheet-back" id="monthSheet" hidden><div class="sheet-body" id="monthSheetBody" role="dialog" aria-modal="true" aria-label="Month detail"></div></div>
+<div class="sheet-back" id="settingsSheet" hidden><div class="sheet-body" id="settingsSheetBody" role="dialog" aria-modal="true" aria-label="Contract settings"></div></div>
 <div class="sheet-back" id="infoSheet" hidden><div class="sheet-body" id="infoBody" role="dialog" aria-modal="true" aria-label="About this data"></div></div>
 
 <script>
@@ -836,7 +896,7 @@ async function renderAircraftStatus() {
         <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
           <div class="field"><label>${isGrounded ? 'Serviceable date' : 'Grounded date'}</label><input type="date" id="ac_date_${id}" value="${todayStr}"></div>
           <div class="field"><label>Note</label><input type="text" id="ac_note_${id}" placeholder="${isGrounded ? 'e.g. inspection complete' : 'e.g. annual inspection'}"></div>
-          <div class="field"><label>Password</label><input type="password" id="ac_pass_${id}" placeholder="required"></div>
+          <div class="field"><label>Password</label><input type="password" id="ac_pass_${id}" placeholder="required" value="${ownerPw ? escapeAttr(ownerPw) : ''}" autocomplete="current-password"></div>
         </div>
         <button class="primary ac-submit-btn" data-ac="${id}" data-reg="${ac.reg}" data-grounded="${isGrounded}">${isGrounded ? 'Confirm serviceable' : 'Confirm grounded'}</button>
         <span id="ac_status_${id}" style="font-size:11px; color:var(--dim); margin-left:8px;"></span>
@@ -966,6 +1026,502 @@ async function renderAircraftStatus() {
         });
       });
     }
+}
+
+// ==== CONTRACT ENGINE START (pure functions; no DOM, no network) ====
+// Implements the utilisation clauses of the aircraft addenda:
+//   adjusted baseline = baselineHours x (available days / total days in month), rounded DOWN to 0.1 h
+//   3-month cycles with rolling credit (surplus) / deficit, deficit billed at cycle end.
+// Every calendar day of the year counts (Sundays and holidays included).
+
+function ctPad(n){ return String(n).padStart(2,'0'); }
+function ctDim(ym){ const [y,m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+function ctAddMonths(ym, delta){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m-1+delta, 1));
+  return d.getUTCFullYear() + '-' + ctPad(d.getUTCMonth()+1);
+}
+function ctMonthsBetween(a, b){ // whole months from a to b ("YYYY-MM")
+  const [ay,am] = a.split('-').map(Number), [by,bm] = b.split('-').map(Number);
+  return (by-ay)*12 + (bm-am);
+}
+function ctDates(ym){ const n = ctDim(ym), out = []; for(let d=1; d<=n; d++) out.push(ym + '-' + ctPad(d)); return out; }
+function ctFloorTenth(x){ return Math.floor(x*10 + 1e-9) / 10; }
+function ctRound2(x){ return Math.round(x*100) / 100; }
+function ctMin(hhmm){ return parseInt(hhmm.slice(0,2))*60 + parseInt(hhmm.slice(3,5)); }
+
+// First month of the 3-month (or N-month) cycle that contains `ym`.
+function ctCycleStart(ym, anchorDate, len){
+  const anchorYM = anchorDate.slice(0,7);
+  const k = Math.floor(ctMonthsBetween(anchorYM, ym) / len);
+  return ctAddMonths(anchorYM, k*len);
+}
+function ctCycleMonths(startYM, len){
+  const out = []; for(let i=0; i<len; i++) out.push(ctAddMonths(startYM, i)); return out;
+}
+
+// Group the logged 30-minute checks by local date.
+function ctIndexHistory(rows){
+  const map = new Map();
+  (rows || []).forEach(r => {
+    if(!r || !r.LocalTime) return;
+    const d = r.LocalTime.slice(0,10);
+    if(!map.has(d)) map.set(d, []);
+    map.get(d).push(r);
+  });
+  return map;
+}
+
+function ctGroundedOn(reg, day, groundingRows, todayStr, releaseCounts){
+  return (groundingRows || []).some(r => {
+    if(r.Registration !== reg || !r.GroundedDate) return false;
+    const start = r.GroundedDate, end = r.UngroundedDate || null;
+    if(day < start) return false;
+    if(end === null) return day <= todayStr;            // still grounded: counts up to today
+    return releaseCounts ? day <= end : day < end;
+  });
+}
+
+// Would the dashboard's own logged weather have made this a non-flying day?
+function ctWeatherDay(day, histByDate, rule, todayStr, nowMin){
+  const start = ctMin(rule.windowStart), end = ctMin(rule.windowEnd);
+  const complete = day < todayStr || (day === todayStr && nowMin >= end);
+  if(!complete) return { state: 'pending' };
+  const rows = (histByDate.get(day) || []).filter(r => {
+    const t = (r.LocalTime.split('T')[1] || '00:00');
+    const m = ctMin(t);
+    return m >= start && m < end;
+  });
+  const expected = (end - start) / 30;
+  if(rows.length < expected * 0.5) return { state: 'nodata', slots: rows.length };
+  const ok = rows.filter(r => r.Verdict === 'FLYABLE' || (rule.cautionCountsAsFlyable && r.Verdict === 'CAUTION')).length * 0.5;
+  return { state: ok < rule.minFlyableHours ? 'bad' : 'ok', flyableHours: ok, slots: rows.length };
+}
+
+// One aircraft, one calendar month.
+// ctx: { settings, grounding[], histByDate, overrides{reg:{date:'unavailable'|'available'}}, todayStr, nowMin }
+function ctMonth(reg, ym, ctx){
+  const s = ctx.settings, ac = (s.aircraft || {})[reg] || {};
+  const eff = ac.effectiveFrom || null;
+  const dates = ctDates(ym), total = dates.length;
+  const ov = (ctx.overrides || {})[reg] || {};
+  const days = [];
+  let nMaint = 0, nWeather = 0, nForcedOff = 0, nForcedOn = 0, nBefore = 0;
+
+  dates.forEach(d => {
+    let kind = 'ok', auto = null;
+    if(eff && d < eff){ kind = 'before'; nBefore++; }
+    else {
+      if(ctGroundedOn(reg, d, ctx.grounding, ctx.todayStr, s.releaseDayCountsAsUnavailable)){ auto = 'maint'; }
+      else if(s.weatherRule.enabled){
+        const w = ctWeatherDay(d, ctx.histByDate, s.weatherRule, ctx.todayStr, ctx.nowMin);
+        if(w.state === 'bad') auto = 'weather';
+        else if(w.state === 'nodata') kind = 'nodata';
+        else if(w.state === 'pending') kind = d > ctx.todayStr ? 'future' : 'pending';
+      } else if(d > ctx.todayStr){ kind = 'future'; }
+      if(auto) kind = auto;
+      const o = ov[d];
+      if(o === 'unavailable' && !auto){ kind = 'forced-off'; nForcedOff++; }
+      else if(o === 'unavailable' && auto){ /* already unavailable */ }
+      else if(o === 'available' && auto){ kind = 'forced-on'; nForcedOn++; auto = null; }
+      if(auto === 'maint') nMaint++;
+      if(auto === 'weather') nWeather++;
+    }
+    const unavailable = kind === 'before' || kind === 'maint' || kind === 'weather' || kind === 'forced-off';
+    days.push({ date: d, kind, override: ov[d] || null, unavailable });
+  });
+
+  const unavailableDays = days.filter(x => x.unavailable).length;
+  const available = total - unavailableDays;
+  const rawBaseline = s.baselineHours * available / total;
+  const monthEnd = ym + '-' + ctPad(total);
+  const monthStart = ym + '-01';
+  return {
+    ym, reg, total, days, available, unavailableDays,
+    counts: { maint: nMaint, weather: nWeather, forcedOff: nForcedOff, forcedOn: nForcedOn, before: nBefore },
+    baseline: ctFloorTenth(rawBaseline),
+    status: (eff && monthEnd < eff) ? 'na' : (monthEnd < ctx.todayStr ? 'closed' : (monthStart > ctx.todayStr ? 'future' : 'open')),
+  };
+}
+
+// One aircraft, one cycle: rolling balance of credit (+) / deficit (-).
+// ctx additionally has: invoices { "REG|YYYY-MM": { invoicedHours, ownerHours } }
+function ctCycle(reg, startYM, ctx){
+  const s = ctx.settings;
+  const months = ctCycleMonths(startYM, s.cycleLengthMonths).map(ym => {
+    const m = ctMonth(reg, ym, ctx);
+    const inv = (ctx.invoices || {})[reg + '|' + ym] || null;
+    m.invoice = inv;
+    m.counted = inv ? ctRound2(inv.invoicedHours - (inv.ownerHours || 0)) : null;
+    return m;
+  });
+  let balance = 0, allIn = true, allClosed = true;
+  months.forEach(m => {
+    if(m.status === 'na'){ m.diff = null; m.balanceAfter = null; return; }
+    if(m.status !== 'closed') allClosed = false;
+    if(m.counted === null){ allIn = false; m.diff = null; m.balanceAfter = null; return; }
+    m.diff = ctRound2(m.counted - m.baseline);
+    balance = ctRound2(balance + m.diff);
+    m.balanceAfter = balance;
+  });
+  const deficit = Math.max(0, ctRound2(-balance));
+  const credit = Math.max(0, ctRound2(balance));
+  const complete = allIn && allClosed;
+  const r = s.rate;
+  const exVat = ctRound2(deficit * r.perHour * r.multiplier);
+  return {
+    reg, startYM, months, balance, deficit, credit, complete,
+    state: complete ? 'final' : 'provisional',
+    billable: complete ? deficit : null,
+    rand: { exVat, vat: ctRound2(exVat * r.vatPercent / 100), inclVat: ctRound2(exVat * (1 + r.vatPercent / 100)) },
+  };
+}
+// ==== CONTRACT ENGINE END ====
+
+// ===== OWNER LOGIN + CONTRACT TAB (private: data lives on the Worker, behind the password) =====
+let ownerPw = null, ownerData = null, ctAc = null, ctCycleYM = null, ctMonthOpen = null;
+const OWNER_SS_KEY = 'fasxOwnerPw';
+
+function ctEsc(s){ return escapeAttr(s == null ? '' : s); }
+function ctFmt(x){ return (Math.round(x*10)/10).toFixed(1); }
+function ctMonthName(ym){ return new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month:'long', year:'numeric', timeZone:'UTC'}); }
+function ctRand(x){ return 'R' + Math.round(x).toLocaleString('en-ZA').replace(/ /g, ' '); }
+
+async function ownerCall(path, body){
+  if(!WORKER_URL) throw new Error('Worker URL is not configured');
+  const res = await fetch(WORKER_URL + path, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(Object.assign({}, body, {password: ownerPw}))
+  });
+  const data = await res.json().catch(() => ({}));
+  if(res.status === 401){ if(ownerData) ownerLock(); throw new Error('Incorrect password'); }
+  if(!res.ok || !data.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+  return data;
+}
+
+async function ownerUnlock(pw, silent){
+  ownerPw = pw;
+  try{
+    const d = await ownerCall('/owner/state', {});
+    ownerData = d.data;
+    try{ sessionStorage.setItem(OWNER_SS_KEY, pw); }catch(e){}
+    document.querySelector('.tab[data-tab="contract"]').hidden = false;
+    renderContract();
+    if(typeof renderAircraftStatus === 'function') renderAircraftStatus();   // pre-fills the ground/release password
+    return true;
+  }catch(e){
+    ownerPw = null; ownerData = null;
+    if(!silent) throw e;
+    return false;
+  }
+}
+
+function ownerLock(){
+  ownerPw = null; ownerData = null; ctMonthOpen = null;
+  try{ sessionStorage.removeItem(OWNER_SS_KEY); }catch(e){}
+  const tab = document.querySelector('.tab[data-tab="contract"]');
+  if(tab) tab.hidden = true;
+  const panel = document.getElementById('tab-contract');
+  const wasOpen = panel && panel.classList.contains('on');
+  const holder = document.getElementById('contractHolder');
+  if(holder) holder.innerHTML = '';
+  closeSheets();
+  if(wasOpen) showTab('now');
+}
+
+function ctBuildCtx(){
+  const now = localNow();
+  return {
+    settings: ownerData.settings, grounding: aircraftRows, histByDate: ctIndexHistory(historyRows),
+    overrides: ownerData.overrides || {}, invoices: ownerData.months || {},
+    todayStr: now.dateStr, nowMin: now.hh*60 + now.mm
+  };
+}
+
+function ctMonthCardHtml(m, s){
+  const name = ctMonthName(m.ym);
+  if(m.status === 'na'){
+    return `<div class="card ct-card na"><div class="mrow"><b>${name}</b><span class="ct-chip">not in effect</span></div>
+      <div class="ct-math">This month is before the addendum took effect (${ctEsc(s.aircraft[m.reg].effectiveFrom)}).</div></div>`;
+  }
+  const parts = [`${m.total} days`];
+  if(m.counts.maint) parts.push(`&minus; ${m.counts.maint} maintenance`);
+  if(m.counts.weather) parts.push(`&minus; ${m.counts.weather} weather`);
+  if(m.counts.forcedOff) parts.push(`&minus; ${m.counts.forcedOff} added by you`);
+  if(m.counts.forcedOn) parts.push(`+ ${m.counts.forcedOn} released by you`);
+  if(m.counts.before) parts.push(`&minus; ${m.counts.before} before effective date`);
+  const baseLine = `Baseline <code>${s.baselineHours} &times; ${m.available}/${m.total} = ${ctFmt(m.baseline)} h</code> &middot; ${parts.join(' ')}`;
+
+  let right, cls = '', bar = '';
+  if(m.counted !== null){
+    const good = m.diff >= 0;
+    right = `<span class="mono" style="color:var(${good ? '--green' : '--red'})">${good ? '+' : '&minus;'}${ctFmt(Math.abs(m.diff))} h ${good ? 'surplus' : 'short'}</span>`;
+    cls = good ? '' : ' bad';
+    const pct = m.baseline > 0 ? Math.min(100, Math.round(m.counted / m.baseline * 100)) : 100;
+    bar = `<div class="ct-bar"><i style="width:${pct}%;background:var(${good ? '--fill-g' : '--fill-r'})"></i></div>
+      <div class="res"><span>Counted <b class="mono">${ctFmt(m.counted)} h</b>${m.invoice.ownerHours ? ` <span class="ct-dim">(${ctFmt(m.invoice.invoicedHours)} invoiced &minus; ${ctFmt(m.invoice.ownerHours)} owner flying)</span>` : ''}</span>
+      <span>running ${m.balanceAfter >= 0 ? 'credit' : 'deficit'} <b class="mono">${ctFmt(Math.abs(m.balanceAfter))} h</b></span></div>`;
+  } else if(m.status === 'closed'){
+    right = `<span class="ct-chip warn">awaiting invoice</span>`;
+  } else if(m.status === 'open'){
+    right = `<span class="ct-chip">in progress &middot; provisional</span>`;
+  } else {
+    right = `<span class="ct-chip">upcoming</span>`;
+  }
+  return `<div class="card ct-card${cls}" data-month="${m.ym}" role="button" tabindex="0"><div class="mrow"><b>${name}</b>${right}</div>
+    <div class="ct-math">${baseLine}</div>${bar}<div class="ct-tap">Tap to ${m.counted === null ? 'enter the invoice' : 'edit'} &rsaquo;</div></div>`;
+}
+
+function renderContract(){
+  const holder = document.getElementById('contractHolder');
+  if(!holder || !ownerData) return;
+  const s = ownerData.settings;
+  const regs = Object.keys(s.aircraft).filter(r => s.aircraft[r].enabled !== false);
+  if(regs.length === 0){ holder.innerHTML = '<div class="loading">No aircraft are enabled. Open Settings to add one.</div>'; return; }
+  if(!ctAc || regs.indexOf(ctAc) === -1) ctAc = regs[0];
+  const ctx = ctBuildCtx();
+  const todayYM = ctx.todayStr.slice(0, 7);
+  const currentCycle = ctCycleStart(todayYM, s.cycleAnchor, s.cycleLengthMonths);
+  if(!ctCycleYM) ctCycleYM = currentCycle;
+  const cy = ctCycle(ctAc, ctCycleYM, ctx);
+  const lastYM = ctAddMonths(ctCycleYM, s.cycleLengthMonths - 1);
+  const isCurrent = ctCycleYM === currentCycle;
+  const chips = regs.map(r => `<button type="button" class="chip ${r===ctAc?'on':''}" data-ac="${r}">${r}</button>`).join('');
+
+  let result;
+  if(cy.state === 'final'){
+    result = cy.deficit > 0
+      ? `<div class="card ct-result bad"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--red)">${ctFmt(cy.deficit)} h</span>
+          <span class="mono">&asymp; ${ctRand(cy.rand.exVat)} + VAT</span></div>
+          <div class="ct-dim">${ctRand(cy.rand.inclVat)} incl. ${s.rate.vatPercent}% VAT &middot; estimate at R${s.rate.perHour} &times; ${s.rate.multiplier} per hour &mdash; check against the contract.</div></div>`
+      : `<div class="card ct-result ok"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--green)">None</span></div>
+          <div class="ct-dim">No deficit at the end of the cycle${cy.credit > 0 ? ` (${ctFmt(cy.credit)} h surplus does not carry into the next cycle)` : ''}.</div></div>`;
+  } else {
+    const have = cy.months.some(m => m.counted !== null);
+    result = `<div class="card ct-result"><div class="ct-rl">CYCLE POSITION &middot; PROVISIONAL</div>
+      <div class="mrow"><span class="big mono" style="color:var(${cy.balance >= 0 ? '--green' : '--red'})">${have ? (cy.balance >= 0 ? ctFmt(cy.credit) + ' h credit' : ctFmt(cy.deficit) + ' h deficit') : 'no invoices yet'}</span>
+      ${cy.deficit > 0 ? `<span class="mono ct-dim">&asymp; ${ctRand(cy.rand.exVat)} + VAT*</span>` : ''}</div>
+      <div class="ct-dim">Final once every month has ended and its invoice is entered. ${cy.deficit > 0 ? '*If the cycle ended with today\'s figures.' : ''}</div></div>`;
+  }
+
+  holder.innerHTML = `
+    <div class="ct-top"><span class="pill ok">&#128275; unlocked</span>
+      <span><button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
+    <div class="chips">${chips}</div>
+    <div class="cal-nav"><button type="button" id="ctPrev" aria-label="Previous cycle">&#9664;</button>
+      <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)}<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')}</span></b>
+      <button type="button" id="ctNext" aria-label="Next cycle">&#9654;</button></div>
+    ${cy.months.map(m => ctMonthCardHtml(m, s)).join('')}
+    ${result}
+    <div class="hint">Every calendar day counts. Maintenance days come from the Fleet log; weather days from this dashboard's own logged checks (${s.weatherRule.windowStart}&ndash;${s.weatherRule.windowEnd}, fewer than ${s.weatherRule.minFlyableHours} flyable hours). Tap a month to add or release individual days.</div>`;
+
+  holder.querySelectorAll('.chip[data-ac]').forEach(b => b.addEventListener('click', () => { ctAc = b.dataset.ac; renderContract(); }));
+  document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -s.cycleLengthMonths); renderContract(); });
+  document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, s.cycleLengthMonths); renderContract(); });
+  document.getElementById('ctLockBtn').addEventListener('click', ownerLock);
+  document.getElementById('ctSettingsBtn').addEventListener('click', openSettingsSheet);
+  holder.querySelectorAll('.ct-card[data-month]').forEach(c => {
+    const open = () => openMonthSheet(c.dataset.month);
+    c.addEventListener('click', open);
+    c.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
+  });
+}
+
+// ----- month detail sheet: calendar of days + invoice entry -----
+function openMonthSheet(ym){
+  ctMonthOpen = ym;
+  renderMonthSheet();
+  openSheet('monthSheet');
+}
+
+function renderMonthSheet(){
+  const body = document.getElementById('monthSheetBody');
+  if(!body || !ctMonthOpen || !ownerData) return;
+  const s = ownerData.settings, ym = ctMonthOpen;
+  const ctx = ctBuildCtx();
+  const cy = ctCycle(ctAc, ctCycleStart(ym, s.cycleAnchor, s.cycleLengthMonths), ctx);
+  const m = cy.months.find(x => x.ym === ym);
+  const inv = m.invoice;
+  const lead = (new Date(ym + '-01T12:00:00Z').getUTCDay() + 6) % 7;
+  let cells = ['M','T','W','T','F','S','S'].map(d => `<span class="ct-h">${d}</span>`).join('') + '<span></span>'.repeat(lead);
+  const label = {ok:'available', maint:'maintenance', weather:'weather (non-flying)', 'forced-off':'marked unavailable by you', 'forced-on':'released by you',
+    nodata:'no weather data logged', pending:'day not finished', future:'future', before:'before effective date'};
+  m.days.forEach(d => {
+    const n = parseInt(d.date.slice(8));
+    const tappable = d.kind !== 'before';
+    cells += `<button type="button" class="ct-d ${d.kind}${d.override ? ' ovr' : ''}" ${tappable ? `data-date="${d.date}"` : 'disabled'} aria-label="${d.date}: ${label[d.kind]}">${n}</button>`;
+  });
+  const q = (v) => (v === undefined || v === null) ? '' : v;
+  body.innerHTML = `
+    <div class="sheet-head"><b>${ctMonthName(ym)} &middot; ${ctAc}</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+    <div class="ct-cal">${cells}</div>
+    <div class="tl-legend" style="margin-top:8px;">
+      <span><i class="lg" style="background:var(--fill-g)"></i>available</span><span><i class="lg" style="background:var(--fill-r)"></i>maintenance</span>
+      <span><i class="lg" style="background:var(--fill-a)"></i>weather</span><span><i class="lg x"></i>unknown / future</span></div>
+    <div class="hint">Tap a day to override it (a dashed corner means you changed it). Tap again to go back to automatic.</div>
+    <div class="card" style="margin-top:12px;">
+      <div class="kv"><span>Total days</span><b>${m.total}</b></div>
+      <div class="kv"><span>Maintenance days (Fleet log)</span><b>${m.counts.maint}</b></div>
+      <div class="kv"><span>Weather days (dashboard logs)</span><b>${m.counts.weather}</b></div>
+      ${m.counts.forcedOff ? `<div class="kv"><span>Added by you</span><b>${m.counts.forcedOff}</b></div>` : ''}
+      ${m.counts.forcedOn ? `<div class="kv"><span>Released by you</span><b>${m.counts.forcedOn}</b></div>` : ''}
+      ${m.counts.before ? `<div class="kv"><span>Before effective date</span><b>${m.counts.before}</b></div>` : ''}
+      <div class="kv"><span>Available days</span><b>${m.available}</b></div>
+      <div class="kv"><span>Adjusted baseline (${s.baselineHours} &times; ${m.available}/${m.total}, rounded down)</span><b class="mono">${ctFmt(m.baseline)} h</b></div>
+    </div>
+    <div class="card">
+      <div class="fld"><div><label for="ct_inv">Invoiced hours</label><input class="f" id="ct_inv" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.invoicedHours)}"></div>
+        <div><label for="ct_own">Owner-flying hours (excluded)</label><input class="f" id="ct_own" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.ownerHours)}"></div></div>
+      <label for="ct_note" style="margin-top:8px;">Note (invoice number etc.)</label><input class="f" id="ct_note" type="text" maxlength="300" value="${ctEsc(inv && inv.note || '')}">
+      <div id="ct_calc" class="ct-calc"></div>
+      <div style="display:flex; gap:8px; margin-top:10px;"><button type="button" id="ctSave" class="primary" style="flex:1;">Save month</button>
+        ${inv ? '<button type="button" id="ctClear">Clear</button>' : ''}</div>
+      <div id="ct_msg" class="hint"></div>
+    </div>`;
+
+  const calc = () => {
+    const iv = parseFloat(document.getElementById('ct_inv').value), ow = parseFloat(document.getElementById('ct_own').value) || 0;
+    const el = document.getElementById('ct_calc');
+    if(isNaN(iv)){ el.innerHTML = ''; return; }
+    const counted = ctRound2(iv - ow), diff = ctRound2(counted - m.baseline);
+    el.innerHTML = `<div class="kv"><span>Counted hours</span><b class="mono">${ctFmt(counted)} h</b></div>
+      <div class="kv"><span>${diff >= 0 ? 'Surplus' : 'Shortfall'} vs baseline</span><b class="mono" style="color:var(${diff >= 0 ? '--green' : '--red'})">${diff >= 0 ? '+' : '&minus;'}${ctFmt(Math.abs(diff))} h</b></div>`;
+  };
+  body.querySelectorAll('#ct_inv, #ct_own').forEach(i => i.addEventListener('input', calc));
+  calc();
+
+  body.querySelectorAll('.ct-d[data-date]').forEach(b => b.addEventListener('click', async () => {
+    const date = b.dataset.date;
+    const d = m.days.find(x => x.date === date);
+    const next = d.override ? null : ((d.kind === 'maint' || d.kind === 'weather') ? 'available' : 'unavailable');
+    const msg = document.getElementById('ct_msg');
+    msg.textContent = 'saving…';
+    try{
+      const r = await ownerCall('/owner/override', {aircraft: ctAc, date, status: next});
+      ownerData = r.data; renderMonthSheet(); renderContract();
+    }catch(e){ msg.textContent = 'Failed: ' + e.message; }
+  }));
+
+  document.getElementById('ctSave').addEventListener('click', async () => {
+    const msg = document.getElementById('ct_msg');
+    const iv = document.getElementById('ct_inv').value;
+    if(iv === ''){ msg.textContent = 'Enter the invoiced hours first (or use Clear).'; return; }
+    msg.textContent = 'saving…';
+    try{
+      const r = await ownerCall('/owner/save-month', {aircraft: ctAc, month: ym, invoicedHours: iv,
+        ownerHours: document.getElementById('ct_own').value, note: document.getElementById('ct_note').value});
+      ownerData = r.data; renderContract(); closeSheets();
+    }catch(e){ msg.textContent = 'Failed: ' + e.message; }
+  });
+  const clr = document.getElementById('ctClear');
+  if(clr) clr.addEventListener('click', async () => {
+    if(!confirm('Remove the saved invoice for this month?')) return;
+    try{
+      const r = await ownerCall('/owner/save-month', {aircraft: ctAc, month: ym, invoicedHours: null});
+      ownerData = r.data; renderContract(); closeSheets();
+    }catch(e){ document.getElementById('ct_msg').textContent = 'Failed: ' + e.message; }
+  });
+}
+
+// ----- settings sheet -----
+function openSettingsSheet(){
+  const s = ownerData.settings, w = s.weatherRule;
+  const acRows = Object.keys(s.aircraft).map(reg => {
+    const a = s.aircraft[reg];
+    return `<div class="ct-acrow" data-reg="${reg}"><b class="mono">${reg}</b>
+      <input class="f" data-f="label" type="text" value="${ctEsc(a.label)}" placeholder="type" aria-label="${reg} description">
+      <input class="f" data-f="eff" type="date" value="${ctEsc(a.effectiveFrom || '')}" aria-label="${reg} addendum effective from">
+      <label class="checkline"><input type="checkbox" data-f="on" ${a.enabled !== false ? 'checked' : ''}> on</label></div>`;
+  }).join('');
+  const body = document.getElementById('settingsSheetBody');
+  body.innerHTML = `
+    <div class="sheet-head"><b>Contract settings</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+    <div class="section-title">Utilisation</div>
+    <div class="form-grid">
+      <div class="field"><label for="st_base">Baseline hours / month</label><input id="st_base" type="number" step="0.5" min="0" value="${s.baselineHours}"></div>
+      <div class="field"><label for="st_len">Cycle length (months)</label><input id="st_len" type="number" step="1" min="1" max="12" value="${s.cycleLengthMonths}"></div>
+      <div class="field"><label for="st_anchor">A cycle starts on</label><input id="st_anchor" type="date" value="${ctEsc(s.cycleAnchor)}"></div>
+    </div>
+    <div class="section-title">Rand estimate (not part of the maths)</div>
+    <div class="form-grid">
+      <div class="field"><label for="st_rate">Rate per hour (R)</label><input id="st_rate" type="number" step="1" min="0" value="${s.rate.perHour}"></div>
+      <div class="field"><label for="st_mult">Tacho multiplier</label><input id="st_mult" type="number" step="0.01" min="0" value="${s.rate.multiplier}"></div>
+      <div class="field"><label for="st_vat">VAT %</label><input id="st_vat" type="number" step="0.5" min="0" value="${s.rate.vatPercent}"></div>
+    </div>
+    <div class="section-title">What counts as a non-flying weather day</div>
+    <div class="form-grid">
+      <div class="field"><label for="st_ws">Window start</label><input id="st_ws" type="time" value="${w.windowStart}"></div>
+      <div class="field"><label for="st_we">Window end</label><input id="st_we" type="time" value="${w.windowEnd}"></div>
+      <div class="field"><label for="st_min">Min flyable hours</label><input id="st_min" type="number" step="0.5" min="0" value="${w.minFlyableHours}"></div>
+    </div>
+    <div class="checkline"><input type="checkbox" id="st_wen" ${w.enabled ? 'checked' : ''}> <label for="st_wen" style="margin:0">Count weather days automatically</label></div>
+    <div class="checkline" style="margin-top:6px;"><input type="checkbox" id="st_caut" ${w.cautionCountsAsFlyable ? 'checked' : ''}> <label for="st_caut" style="margin:0">CAUTION hours count as flyable</label></div>
+    <div class="checkline" style="margin-top:6px;"><input type="checkbox" id="st_rel" ${s.releaseDayCountsAsUnavailable ? 'checked' : ''}> <label for="st_rel" style="margin:0">The day an aircraft is released still counts as unavailable</label></div>
+    <div class="section-title" style="margin-top:14px;">Aircraft &amp; the day each addendum took effect</div>
+    ${acRows}
+    <div class="ct-acrow" id="st_newrow"><input class="f" id="st_newreg" type="text" placeholder="add registration, e.g. ZU-ABC" maxlength="10" style="grid-column:1 / -1;"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+      <button type="button" id="stSave" class="primary">Save settings</button>
+      <button type="button" id="stBackup">Download backup</button></div>
+    <div id="st_msg" class="hint"></div>`;
+
+  document.getElementById('stSave').addEventListener('click', async () => {
+    const msg = document.getElementById('st_msg');
+    const aircraft = {};
+    body.querySelectorAll('.ct-acrow[data-reg]').forEach(row => {
+      aircraft[row.dataset.reg] = {
+        label: row.querySelector('[data-f=label]').value,
+        effectiveFrom: row.querySelector('[data-f=eff]').value || null,
+        enabled: row.querySelector('[data-f=on]').checked
+      };
+    });
+    const nr = document.getElementById('st_newreg').value.trim().toUpperCase();
+    if(nr){
+      if(!/^[A-Z0-9-]{3,10}$/.test(nr)){ msg.textContent = 'That registration doesn\'t look right.'; return; }
+      aircraft[nr] = {label: '', effectiveFrom: null, enabled: true};
+    }
+    const settings = {
+      baselineHours: document.getElementById('st_base').value, cycleLengthMonths: document.getElementById('st_len').value,
+      cycleAnchor: document.getElementById('st_anchor').value,
+      rate: {perHour: document.getElementById('st_rate').value, multiplier: document.getElementById('st_mult').value, vatPercent: document.getElementById('st_vat').value},
+      weatherRule: {enabled: document.getElementById('st_wen').checked, windowStart: document.getElementById('st_ws').value, windowEnd: document.getElementById('st_we').value,
+        minFlyableHours: document.getElementById('st_min').value, cautionCountsAsFlyable: document.getElementById('st_caut').checked},
+      releaseDayCountsAsUnavailable: document.getElementById('st_rel').checked,
+      aircraft: aircraft
+    };
+    msg.textContent = 'saving…';
+    try{
+      const r = await ownerCall('/owner/settings', {settings});
+      ownerData = r.data; ctCycleYM = null; renderContract(); closeSheets();
+    }catch(e){ msg.textContent = 'Failed: ' + e.message; }
+  });
+  document.getElementById('stBackup').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(ownerData, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'FASX_contract_backup_' + localNow().dateStr + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+  openSheet('settingsSheet');
+}
+
+function wireOwnerUnlock(){
+  const form = document.getElementById('unlockForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('unlockPw'), msg = document.getElementById('unlockMsg'), btn = document.getElementById('unlockBtn');
+    if(!input.value){ msg.textContent = 'Enter the password.'; return; }
+    btn.disabled = true; msg.textContent = 'checking…';
+    try{
+      await ownerUnlock(input.value, false);
+      input.value = ''; msg.textContent = '';
+      closeSheets(); showTab('contract');
+    }catch(err){
+      msg.textContent = err.message; input.value = '';
+    }
+    btn.disabled = false;
+  });
 }
 
 // ===== UI state & helpers (tabs, sheets, plan, calendar) =====
@@ -1278,6 +1834,8 @@ function showCalDay(){
 
 // ----- Tabs & sheets -----
 function showTab(name){
+  if(name === 'contract' && !ownerPw) name = 'now';
+  document.body.classList.toggle('on-contract', name === 'contract');
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'tab-' + name));
   document.querySelectorAll('.tabbar .tab').forEach(t => {
     const on = t.dataset.tab === name;
@@ -1575,8 +2133,14 @@ async function renderAll(entries){
       <b>Visibility</b> caution &lt;${CRIT.visCaution}km, no-fly &lt;${CRIT.visNoFly}km &middot;
       <b>Precip</b> light = caution, moderate/heavy = no-fly<br>Generic VFR starting point &mdash; not your operator's official limits.
     </div>
+    <div style="margin-top:18px;"><button type="button" class="linkbtn" id="ownerLoginLink">&#128274; ${ownerPw ? 'Open Contract' : 'Owner login'}</button></div>
     <div class="section-title" style="margin-top:16px;">Raw forecast readout</div>
     <div class="raw mono"><span class="k">FASX</span> ${hourlyCache.hourly.time[nowIdxCache]} LOCAL <span class="k">WIND</span> ${String(fcNow.windDir).padStart(3,'0')}${degToCompass(fcNow.windDir)}${fcNow.windSpeed}G${fcNow.gust}KT <span class="k">VIS</span> ${fcNow.visKm}KM <span class="k">CLD</span> ${cloud}% <span class="k">CIG(EST)</span> ${fcNow.ceilingFt===null?'NSC':fcNow.ceilingFt+'FT'} <span class="k">TEMP/DEW</span> ${fcNow.temp.toFixed(0)}/${fcNow.dew.toFixed(0)}C <span class="k">PRECIP</span> ${fcNow.precip.toUpperCase()}</div>`;
+
+  document.getElementById('ownerLoginLink').addEventListener('click', () => {
+    closeSheets();
+    if(ownerPw){ showTab('contract'); } else { openSheet('unlockSheet'); setTimeout(() => { const i = document.getElementById('unlockPw'); if(i) i.focus(); }, 50); }
+  });
 
   // ---- form wiring ----
   document.getElementById('f_slot').addEventListener('change', (e)=>{
@@ -1765,6 +2329,7 @@ async function load(){
     renderAutomatedHistory();
     renderManualHistory();
     renderAircraftStatus();
+    if(ownerData) renderContract();
 
   }catch(e){
     app.innerHTML = `<div class="err">Could not reach the weather service (${e.message}). Check your connection and press refresh.</div>`;
@@ -1845,6 +2410,12 @@ document.getElementById('themeBtn').addEventListener('click', () => {
   syncThemeBtn();
 });
 syncThemeBtn();
+
+wireOwnerUnlock();
+try {
+  const savedPw = sessionStorage.getItem(OWNER_SS_KEY);
+  if (savedPw) ownerUnlock(savedPw, true);
+} catch (e) {}
 
 load();
 </script>

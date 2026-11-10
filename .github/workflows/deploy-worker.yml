@@ -1,0 +1,63 @@
+name: Deploy Cloudflare Worker
+
+# Manual for now. After the first successful run has been checked on the live site, enable
+# automatic deploys by un-commenting the push trigger (every merge that changes the Worker
+# then goes live by itself).
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths: ["cloudflare-worker/**", "package.json", "tests/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check Cloudflare credentials are configured
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - name: Run tests
+        run: npm test
+
+      - name: Find or create the KV namespace for the private contract data
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces"
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          id=$(curl -fsS -H "$auth" "${api}?per_page=100" | jq -r '.result[] | select(.title=="fasx-contract") | .id' | head -n1)
+          if [ -z "$id" ]; then
+            id=$(curl -fsS -X POST -H "$auth" -H "Content-Type: application/json" -d '{"title":"fasx-contract"}' "$api" | jq -r '.result.id')
+          fi
+          [ -n "$id" ] && [ "$id" != "null" ] || { echo "::error::Could not get a KV namespace id"; exit 1; }
+          sed -i "s/__KV_NAMESPACE_ID__/${id}/" cloudflare-worker/wrangler.toml
+          echo "KV namespace ready"
+
+      - name: Deploy Worker
+        working-directory: cloudflare-worker
+        run: npx --yes wrangler@4.159.0 deploy
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          curl -fsS "https://fasx-log.${{ vars.CLOUDFLARE_SUBDOMAIN || 'vmcaviation2025' }}.workers.dev/health" | tee health.json
+          jq -e '.ok == true and .storage == true' health.json
