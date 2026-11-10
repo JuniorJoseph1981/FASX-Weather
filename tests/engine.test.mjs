@@ -8,12 +8,13 @@ const block = html.match(/\/\/ ==== CONTRACT ENGINE START[\s\S]*?\/\/ ==== CONTR
 assert.ok(block, "engine block not found in index.html");
 const E = new Function(block[0] + "\nreturn { ctCycleStart, ctCycleMonths, ctMonth, ctCycle, ctIndexHistory, ctFloorTenth, ctWeatherDay };")();
 
+// ZS-ESE is given an earlier start (Aug) than the real default (Nov) so the Aug-Oct worked example can be checked.
+const ac = (startMonth, extra = {}) => ({ startMonth, cycleMonths: 3, baselineHours: 40, rates: [{ from: startMonth + "-01", perHour: 1800 }], enabled: true, ...extra });
 const settings = () => ({
-  baselineHours: 40, cycleLengthMonths: 3, cycleAnchor: "2026-11-01",
-  rate: { perHour: 1800, multiplier: 1.2, vatPercent: 15 },
+  billing: { multiplier: 1.2, vatPercent: 15 },
   weatherRule: { enabled: true, windowStart: "07:00", windowEnd: "18:00", minFlyableHours: 4, cautionCountsAsFlyable: true },
   releaseDayCountsAsUnavailable: false,
-  aircraft: { "ZS-ESE": { effectiveFrom: "2026-08-01", enabled: true }, "ZS-JOG": { effectiveFrom: "2026-09-07", enabled: true } },
+  aircraft: { "ZS-ESE": ac("2026-08"), "ZS-JOG": ac("2026-11"), "ZU-NEW": ac("2027-01", { cycleMonths: 4, baselineHours: 30 }) },
 });
 // The real ZS-ESE grounding history from data/aircraft_status.csv
 const ESE = [
@@ -35,13 +36,14 @@ const ctx = (over = {}) => ({
 });
 const force = (reg, dates) => Object.fromEntries(dates.map((d) => [d, "unavailable"]));
 
-test("cycles start 1 Nov and repeat every 3 months", () => {
-  const a = "2026-11-01";
-  assert.equal(E.ctCycleStart("2026-11", a, 3), "2026-11");
-  assert.equal(E.ctCycleStart("2027-01", a, 3), "2026-11");
-  assert.equal(E.ctCycleStart("2027-02", a, 3), "2027-02");
-  assert.equal(E.ctCycleStart("2026-10", a, 3), "2026-08");
-  assert.equal(E.ctCycleStart("2026-08", a, 3), "2026-08");
+test("cycles run invoice-to-invoice from the aircraft's own start month", () => {
+  assert.equal(E.ctCycleStart("2026-11", "2026-11", 3), "2026-11");
+  assert.equal(E.ctCycleStart("2027-01", "2026-11", 3), "2026-11");
+  assert.equal(E.ctCycleStart("2027-02", "2026-11", 3), "2027-02");
+  assert.equal(E.ctCycleStart("2026-10", "2026-11", 3), "2026-08");
+  assert.equal(E.ctCycleStart("2027-01", "2026-12", 3), "2026-12");     // a different aircraft, a different clock
+  assert.equal(E.ctCycleStart("2027-04", "2026-12", 3), "2027-03");
+  assert.equal(E.ctCycleStart("2027-05", "2027-01", 4), "2027-05");     // 4-invoice cycles
   assert.deepEqual(E.ctCycleMonths("2026-11", 3), ["2026-11", "2026-12", "2027-01"]);
 });
 
@@ -117,10 +119,33 @@ test("manual overrides beat the automatic call, both ways", () => {
   assert.equal(nov.days[5].kind, "forced-off"); assert.equal(nov.days[5].unavailable, true);
 });
 
-test("days before the effective date are treated as not available", () => {
-  const sep = E.ctMonth("ZS-JOG", "2026-09", ctx({ grounding: [] }));   // effective 7 Sep -> 1..6 before
-  assert.equal(sep.counts.before, 6); assert.equal(sep.available, 24); assert.equal(sep.baseline, 32.0);
-  assert.equal(E.ctMonth("ZS-JOG", "2026-08", ctx({ grounding: [] })).status, "na");
+test("months before an aircraft's start month are not tracked at all (fresh start)", () => {
+  for (const ym of ["2026-08", "2026-09", "2026-10"]) {
+    const m = E.ctMonth("ZS-JOG", ym, ctx({ grounding: [] }));
+    assert.equal(m.status, "na"); assert.equal(m.baseline, 0);
+  }
+  assert.notEqual(E.ctMonth("ZS-JOG", "2026-11", ctx({ grounding: [] })).status, "na");
+  // a cycle that straddles nothing: the Aug-Oct cycle for ZS-JOG is entirely untracked and never bills
+  const cy = E.ctCycle("ZS-JOG", "2026-08", ctx({ grounding: [], todayStr: "2027-03-01" }));
+  assert.equal(cy.deficit, 0); assert.ok(cy.months.every((m) => m.status === "na"));
+});
+
+test("each aircraft has its own baseline hours and cycle length", () => {
+  const nu = E.ctMonth("ZU-NEW", "2027-01", ctx({ grounding: [], todayStr: "2027-03-01" }));
+  assert.equal(nu.baseline, 30);
+  const cy = E.ctCycle("ZU-NEW", "2027-01", ctx({ grounding: [], todayStr: "2027-09-01" }));
+  assert.equal(cy.months.length, 4);
+});
+
+test("price history: a rise only affects cycles that end after it", () => {
+  const c = ctx({ grounding: [], todayStr: "2027-09-01", invoices: {
+    "ZS-JOG|2026-11": { invoicedHours: 30 }, "ZS-JOG|2026-12": { invoicedHours: 40 }, "ZS-JOG|2027-01": { invoicedHours: 40 },
+    "ZS-JOG|2027-02": { invoicedHours: 30 }, "ZS-JOG|2027-03": { invoicedHours: 40 }, "ZS-JOG|2027-04": { invoicedHours: 40 } } });
+  c.settings.aircraft["ZS-JOG"].rates = [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-03-01", perHour: 1950 }];
+  const first = E.ctCycle("ZS-JOG", "2026-11", c);     // ends 31 Jan 2027 -> R1800
+  const second = E.ctCycle("ZS-JOG", "2027-02", c);    // ends 30 Apr 2027 -> R1950
+  assert.equal(first.deficit, 10); assert.equal(first.perHour, 1800); assert.equal(first.rand.exVat, 21600);
+  assert.equal(second.deficit, 10); assert.equal(second.perHour, 1950); assert.equal(second.rand.exVat, 23400);
 });
 
 test("the contract's own example: 60 h then 30 h leaves no deficit", () => {

@@ -47,11 +47,17 @@ const LOCKOUT_SECONDS = 900;         // ... within this window
 
 // Defaults for the contract maths. Everything here can be changed from the dashboard's
 // Contract -> Settings screen; the dashboard never needs a code change for these.
+//
+// Each aircraft has its OWN contract clock, so a new aircraft can start whenever its first
+// invoice period begins:
+//   startMonth      first invoice month that counts ("YYYY-MM"); cycles run invoice-to-invoice from it
+//   cycleMonths     length of one cycle (3 = quarterly)
+//   baselineHours   guaranteed billed hours per month
+//   rates           hourly price history [{from, perHour}] (ex VAT); the rate in force on the last day
+//                   of a cycle is used for the cycle-end estimate, so a price rise never changes old cycles
+const DEFAULT_START_MONTH = "2026-11";
 const DEFAULT_SETTINGS = {
-  baselineHours: 40,
-  cycleLengthMonths: 3,
-  cycleAnchor: "2026-11-01",                       // a cycle starts on this date (and every N months from it)
-  rate: { perHour: 1800, multiplier: 1.2, vatPercent: 15 },   // used only for the Rand estimate
+  billing: { multiplier: 1.2, vatPercent: 15 },    // multiplier = tacho factor in the contract rate clause
   weatherRule: {
     enabled: true,
     windowStart: "07:00",                          // daylight window the logged checks are judged over
@@ -61,8 +67,8 @@ const DEFAULT_SETTINGS = {
   },
   releaseDayCountsAsUnavailable: false,            // is the day an aircraft is released still "unavailable"?
   aircraft: {
-    "ZS-ESE": { label: "Siai-Marchetti S205", effectiveFrom: "2026-08-01", enabled: true },
-    "ZS-JOG": { label: "Cessna 172N", effectiveFrom: "2026-09-07", enabled: true },
+    "ZS-ESE": { label: "Siai-Marchetti S205", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
+    "ZS-JOG": { label: "Cessna 172N", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
   },
 };
 
@@ -315,20 +321,45 @@ function clampNum(v, def, min, max) {
 }
 function hhmm(v, def) { return typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : def; }
 
+function isYearMonth(v) { return typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v); }
+
+function sanitizeRates(input, prev, startMonth) {
+  const src = Array.isArray(input) ? input : (Array.isArray(prev) ? prev : []);
+  const byDate = new Map();
+  for (const r of src.slice(0, 40)) {
+    if (!r || !isIsoDate(r.from)) continue;
+    const perHour = Number(r.perHour);
+    if (!Number.isFinite(perHour) || perHour < 0 || perHour > 100000) continue;
+    byDate.set(r.from, { from: r.from, perHour: round2(perHour) });
+  }
+  const out = [...byDate.values()].sort((a, b) => (a.from < b.from ? -1 : 1));
+  return out.length ? out : [{ from: startMonth + "-01", perHour: 1800 }];
+}
+
+function sanitizeAircraftEntry(a, prev) {
+  const x = a && typeof a === "object" ? a : {};
+  const p = prev || {};
+  const startMonth = isYearMonth(x.startMonth) ? x.startMonth : (isYearMonth(p.startMonth) ? p.startMonth : DEFAULT_START_MONTH);
+  return {
+    label: String(x.label !== undefined ? x.label : (p.label || "")).slice(0, 60),
+    startMonth,
+    cycleMonths: Math.round(clampNum(x.cycleMonths, p.cycleMonths || 3, 1, 12)),
+    baselineHours: clampNum(x.baselineHours, p.baselineHours !== undefined ? p.baselineHours : 40, 0, 744),
+    rates: sanitizeRates(x.rates, p.rates, startMonth),
+    enabled: typeof x.enabled === "boolean" ? x.enabled : (p.enabled !== false),
+  };
+}
+
 // Merge `input` over `base`, keeping only known keys with valid values.
 function sanitizeSettings(input, base) {
   const b = base || DEFAULT_SETTINGS;
   const i = input && typeof input === "object" ? input : {};
-  const rate = i.rate && typeof i.rate === "object" ? i.rate : {};
+  const bill = i.billing && typeof i.billing === "object" ? i.billing : {};
   const wr = i.weatherRule && typeof i.weatherRule === "object" ? i.weatherRule : {};
   const out = {
-    baselineHours: clampNum(i.baselineHours, b.baselineHours, 0, 744),
-    cycleLengthMonths: Math.round(clampNum(i.cycleLengthMonths, b.cycleLengthMonths, 1, 12)),
-    cycleAnchor: isIsoDate(i.cycleAnchor) ? i.cycleAnchor : b.cycleAnchor,
-    rate: {
-      perHour: clampNum(rate.perHour, b.rate.perHour, 0, 100000),
-      multiplier: clampNum(rate.multiplier, b.rate.multiplier, 0, 100),
-      vatPercent: clampNum(rate.vatPercent, b.rate.vatPercent, 0, 100),
+    billing: {
+      multiplier: clampNum(bill.multiplier, b.billing.multiplier, 0, 100),
+      vatPercent: clampNum(bill.vatPercent, b.billing.vatPercent, 0, 100),
     },
     weatherRule: {
       enabled: typeof wr.enabled === "boolean" ? wr.enabled : b.weatherRule.enabled,
@@ -344,16 +375,13 @@ function sanitizeSettings(input, base) {
     out.weatherRule.windowStart = b.weatherRule.windowStart;
     out.weatherRule.windowEnd = b.weatherRule.windowEnd;
   }
-  const srcAc = i.aircraft && typeof i.aircraft === "object" ? i.aircraft : b.aircraft;
-  for (const reg of Object.keys(srcAc).slice(0, 20)) {
+  // Aircraft already known are kept (an update only changes the ones it mentions); stop tracking one
+  // with enabled:false rather than deleting it, so its invoices and history stay intact.
+  const inAc = i.aircraft && typeof i.aircraft === "object" ? i.aircraft : {};
+  const regs = [...new Set([...Object.keys(b.aircraft), ...Object.keys(inAc)])].slice(0, 20);
+  for (const reg of regs) {
     if (!/^[A-Z0-9-]{3,10}$/.test(reg)) continue;
-    const a = srcAc[reg] || {};
-    const prev = b.aircraft[reg] || {};
-    out.aircraft[reg] = {
-      label: String(a.label !== undefined ? a.label : prev.label || "").slice(0, 60),
-      effectiveFrom: a.effectiveFrom === null || a.effectiveFrom === "" ? null : (isIsoDate(a.effectiveFrom) ? a.effectiveFrom : (prev.effectiveFrom || null)),
-      enabled: typeof a.enabled === "boolean" ? a.enabled : (prev.enabled !== false),
-    };
+    out.aircraft[reg] = sanitizeAircraftEntry(inAc[reg], b.aircraft[reg]);
   }
   if (Object.keys(out.aircraft).length === 0) out.aircraft = JSON.parse(JSON.stringify(b.aircraft));
   return out;

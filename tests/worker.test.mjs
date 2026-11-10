@@ -79,9 +79,12 @@ test("owner endpoints never answer without the password", async () => {
 
 test("state returns defaults on an empty store", async () => {
   const j = await (await owner("/owner/state", {}, baseEnv())).json();
-  assert.equal(j.data.settings.baselineHours, 40);
-  assert.equal(j.data.settings.cycleAnchor, "2026-11-01");
-  assert.deepEqual(Object.keys(j.data.settings.aircraft).sort(), ["ZS-ESE", "ZS-JOG"]);
+  const a = j.data.settings.aircraft;
+  assert.deepEqual(Object.keys(a).sort(), ["ZS-ESE", "ZS-JOG"]);
+  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start fresh on 1 Nov 2026, R1,800/h, 40 h, 3-month cycles
+    assert.equal(a[reg].startMonth, "2026-11"); assert.equal(a[reg].cycleMonths, 3);
+    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-11-01", perHour: 1800 }]);
+  }
   assert.deepEqual(j.data.months, {});
 });
 
@@ -113,26 +116,51 @@ test("override set / replace / clear", async () => {
 test("settings: valid changes applied, junk ignored, previous version kept", async () => {
   const env = baseEnv();
   const j = await (await owner("/owner/settings", { settings: {
-    baselineHours: 45, cycleAnchor: "not-a-date", rate: { perHour: "2000", multiplier: -3 },
+    billing: { multiplier: -3, vatPercent: "15.5" },
     weatherRule: { minFlyableHours: 5, windowStart: "08:00", windowEnd: "07:00", cautionCountsAsFlyable: "yes" },
-    aircraft: { "ZS-ESE": { effectiveFrom: "2026-08-05" }, "bad reg!": {}, "ZU-FZS": { label: "Partenavia", effectiveFrom: null } },
+    aircraft: {
+      "ZS-ESE": { startMonth: "2027-02", baselineHours: 42, cycleMonths: 4, rates: [{ from: "2027-02-01", perHour: 1900 }, { from: "bad", perHour: 5 }, { from: "2026-11-01", perHour: "1800" }, { from: "2027-09-01", perHour: -1 }] },
+      "ZS-JOG": { startMonth: "2026-13", cycleMonths: 99 },
+      "bad reg!": {}, "ZU-FZS": { label: "Partenavia", startMonth: "2026-12" },
+    },
     evil: "<script>",
   } }, env)).json();
   const s = j.data.settings;
-  assert.equal(s.baselineHours, 45);
-  assert.equal(s.cycleAnchor, "2026-11-01");                 // invalid -> kept
-  assert.equal(s.rate.perHour, 2000);
-  assert.equal(s.rate.multiplier, 1.2);                      // invalid -> kept
+  assert.equal(s.billing.multiplier, 1.2);                   // invalid -> kept
+  assert.equal(s.billing.vatPercent, 15.5);
   assert.equal(s.weatherRule.minFlyableHours, 5);
   assert.equal(s.weatherRule.windowStart, "07:00");          // inverted window rejected
   assert.equal(s.weatherRule.cautionCountsAsFlyable, true);  // non-boolean ignored
-  assert.deepEqual(Object.keys(s.aircraft).sort(), ["ZS-ESE", "ZU-FZS"]);
-  assert.equal(s.aircraft["ZS-ESE"].effectiveFrom, "2026-08-05");
-  assert.equal(s.aircraft["ZU-FZS"].effectiveFrom, null);
+  assert.deepEqual(Object.keys(s.aircraft).sort(), ["ZS-ESE", "ZS-JOG", "ZU-FZS"]);
+  const ese = s.aircraft["ZS-ESE"];
+  assert.equal(ese.startMonth, "2027-02"); assert.equal(ese.baselineHours, 42); assert.equal(ese.cycleMonths, 4);
+  assert.deepEqual(ese.rates, [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-02-01", perHour: 1900 }]);   // sorted, junk dropped
+  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-11");  // invalid month -> kept
+  assert.equal(s.aircraft["ZS-JOG"].cycleMonths, 3);         // out of range -> kept
+  const nu = s.aircraft["ZU-FZS"];                           // a new aircraft gets its own clock and a default rate
+  assert.equal(nu.startMonth, "2026-12"); assert.deepEqual(nu.rates, [{ from: "2026-12-01", perHour: 1800 }]);
   assert.equal("evil" in s, false);
   assert.ok(env.FASX_KV.m.has("contract:prev") === false);   // first write has nothing to back up
-  await owner("/owner/settings", { settings: { baselineHours: 30 } }, env);
+  await owner("/owner/settings", { settings: { aircraft: { "ZS-ESE": { baselineHours: 30 } } } }, env);
   assert.ok(env.FASX_KV.m.has("contract:prev"));
+});
+
+test("an update only changes the aircraft it mentions; others are kept", async () => {
+  const env = baseEnv();
+  const j = await (await owner("/owner/settings", { settings: { aircraft: { "ZS-JOG": { baselineHours: 35 } } } }, env)).json();
+  assert.deepEqual(Object.keys(j.data.settings.aircraft).sort(), ["ZS-ESE", "ZS-JOG"]);
+  assert.equal(j.data.settings.aircraft["ZS-JOG"].baselineHours, 35);
+  assert.equal(j.data.settings.aircraft["ZS-ESE"].baselineHours, 40);
+  const k = await (await owner("/owner/settings", { settings: { aircraft: { "ZS-ESE": { enabled: false } } } }, env)).json();
+  assert.equal(k.data.settings.aircraft["ZS-ESE"].enabled, false);          // untracked, not deleted
+});
+
+test("price changes are kept as dated lines and can be removed again", async () => {
+  const env = baseEnv();
+  let j = await (await owner("/owner/settings", { settings: { aircraft: { "ZS-JOG": { rates: [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-11-01", perHour: 1950 }] } } } }, env)).json();
+  assert.equal(j.data.settings.aircraft["ZS-JOG"].rates.length, 2);
+  j = await (await owner("/owner/settings", { settings: { aircraft: { "ZS-JOG": { rates: [{ from: "2026-11-01", perHour: 1800 }] } } } }, env)).json();
+  assert.deepEqual(j.data.settings.aircraft["ZS-JOG"].rates, [{ from: "2026-11-01", perHour: 1800 }]);
 });
 
 test("owner data never touches GitHub", async () => {
@@ -140,7 +168,7 @@ test("owner data never touches GitHub", async () => {
   try {
     const env = baseEnv();
     await owner("/owner/save-month", { aircraft: "ZS-ESE", month: "2026-10", invoicedHours: 10 }, env);
-    await owner("/owner/settings", { settings: { baselineHours: 41 } }, env);
+    await owner("/owner/settings", { settings: { aircraft: { "ZS-ESE": { baselineHours: 41 } } } }, env);
     assert.equal(files.size, 0);
   } finally { restore(); }
 });

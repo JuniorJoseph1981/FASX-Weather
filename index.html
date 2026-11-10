@@ -361,8 +361,14 @@
   .sheet-body .card{align-items:stretch; text-align:left;}
   body.on-contract .fab{display:none;}
   body.on-contract{padding-bottom:90px;}
-  .ct-acrow{display:grid; grid-template-columns:90px 1fr 140px auto; gap:8px; align-items:center; margin-bottom:8px;}
-  @media (max-width:560px){ .ct-acrow{grid-template-columns:1fr 1fr;} .ct-acrow > b{grid-column:1 / -1;} }
+  .ct-acblock{margin-bottom:12px;}
+  .ct-acblock .form-grid .field:first-child{grid-column:1 / -1;}
+  .ct-acblock .mrow{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .ct-raterow{display:grid; grid-template-columns:1fr auto 90px auto; gap:6px; align-items:center; margin-bottom:6px;}
+  .ct-raterow .f{margin-top:0;}
+  .ct-rand{color:var(--sub); font-size:13px;}
+  .ct-rm{min-width:40px;}
+  .ct-addrate{margin-top:2px;}
   .fld{display:flex; gap:10px;} .fld > div{flex:1; min-width:0;}
   input.f{width:100%; min-width:0; padding:10px; font-size:15px; margin-top:4px;}
 </style>
@@ -1050,11 +1056,22 @@ function ctFloorTenth(x){ return Math.floor(x*10 + 1e-9) / 10; }
 function ctRound2(x){ return Math.round(x*100) / 100; }
 function ctMin(hhmm){ return parseInt(hhmm.slice(0,2))*60 + parseInt(hhmm.slice(3,5)); }
 
-// First month of the 3-month (or N-month) cycle that contains `ym`.
-function ctCycleStart(ym, anchorDate, len){
-  const anchorYM = anchorDate.slice(0,7);
+// First month of the N-month cycle that contains `ym`. Cycles run invoice-to-invoice from the
+// aircraft's own start month (never from a mid-month date).
+function ctCycleStart(ym, startMonth, len){
+  const anchorYM = startMonth.slice(0,7);
   const k = Math.floor(ctMonthsBetween(anchorYM, ym) / len);
   return ctAddMonths(anchorYM, k*len);
+}
+function ctAircraft(settings, reg){ return (settings.aircraft || {})[reg] || {}; }
+// Hourly price (ex VAT) in force on `dateStr`: the latest rate whose start date has passed
+// (or the earliest one if the date is before them all).
+function ctRateOn(ac, dateStr){
+  const list = (ac.rates || []).slice().sort((a,b) => a.from < b.from ? -1 : 1);
+  if(list.length === 0) return 0;
+  let cur = list[0];
+  list.forEach(r => { if(r.from <= dateStr) cur = r; });
+  return cur.perHour;
 }
 function ctCycleMonths(startYM, len){
   const out = []; for(let i=0; i<len; i++) out.push(ctAddMonths(startYM, i)); return out;
@@ -1101,54 +1118,54 @@ function ctWeatherDay(day, histByDate, rule, todayStr, nowMin){
 // One aircraft, one calendar month.
 // ctx: { settings, grounding[], histByDate, overrides{reg:{date:'unavailable'|'available'}}, todayStr, nowMin }
 function ctMonth(reg, ym, ctx){
-  const s = ctx.settings, ac = (s.aircraft || {})[reg] || {};
-  const eff = ac.effectiveFrom || null;
+  const s = ctx.settings, ac = ctAircraft(s, reg);
+  const baselineHours = ac.baselineHours !== undefined ? ac.baselineHours : 40;
   const dates = ctDates(ym), total = dates.length;
+  const monthEnd = ym + '-' + ctPad(total);
+  const monthStart = ym + '-01';
+  if(ac.startMonth && ym < ac.startMonth){
+    return { ym, reg, total, days: [], available: 0, unavailableDays: 0, baselineHours,
+      counts: { maint: 0, weather: 0, forcedOff: 0, forcedOn: 0 }, baseline: 0, status: 'na' };
+  }
   const ov = (ctx.overrides || {})[reg] || {};
   const days = [];
-  let nMaint = 0, nWeather = 0, nForcedOff = 0, nForcedOn = 0, nBefore = 0;
+  let nMaint = 0, nWeather = 0, nForcedOff = 0, nForcedOn = 0;
 
   dates.forEach(d => {
     let kind = 'ok', auto = null;
-    if(eff && d < eff){ kind = 'before'; nBefore++; }
-    else {
-      if(ctGroundedOn(reg, d, ctx.grounding, ctx.todayStr, s.releaseDayCountsAsUnavailable)){ auto = 'maint'; }
-      else if(s.weatherRule.enabled){
-        const w = ctWeatherDay(d, ctx.histByDate, s.weatherRule, ctx.todayStr, ctx.nowMin);
-        if(w.state === 'bad') auto = 'weather';
-        else if(w.state === 'nodata') kind = 'nodata';
-        else if(w.state === 'pending') kind = d > ctx.todayStr ? 'future' : 'pending';
-      } else if(d > ctx.todayStr){ kind = 'future'; }
-      if(auto) kind = auto;
-      const o = ov[d];
-      if(o === 'unavailable' && !auto){ kind = 'forced-off'; nForcedOff++; }
-      else if(o === 'unavailable' && auto){ /* already unavailable */ }
-      else if(o === 'available' && auto){ kind = 'forced-on'; nForcedOn++; auto = null; }
-      if(auto === 'maint') nMaint++;
-      if(auto === 'weather') nWeather++;
-    }
-    const unavailable = kind === 'before' || kind === 'maint' || kind === 'weather' || kind === 'forced-off';
-    days.push({ date: d, kind, override: ov[d] || null, unavailable });
+    if(ctGroundedOn(reg, d, ctx.grounding, ctx.todayStr, s.releaseDayCountsAsUnavailable)){ auto = 'maint'; }
+    else if(s.weatherRule.enabled){
+      const w = ctWeatherDay(d, ctx.histByDate, s.weatherRule, ctx.todayStr, ctx.nowMin);
+      if(w.state === 'bad') auto = 'weather';
+      else if(w.state === 'nodata') kind = 'nodata';
+      else if(w.state === 'pending') kind = d > ctx.todayStr ? 'future' : 'pending';
+    } else if(d > ctx.todayStr){ kind = 'future'; }
+    if(auto) kind = auto;
+    const o = ov[d];
+    if(o === 'unavailable' && !auto){ kind = 'forced-off'; nForcedOff++; }
+    else if(o === 'available' && auto){ kind = 'forced-on'; nForcedOn++; auto = null; }
+    if(auto === 'maint') nMaint++;
+    if(auto === 'weather') nWeather++;
+    const unavailable = kind === 'maint' || kind === 'weather' || kind === 'forced-off';
+    days.push({ date: d, kind, override: o || null, unavailable });
   });
 
   const unavailableDays = days.filter(x => x.unavailable).length;
   const available = total - unavailableDays;
-  const rawBaseline = s.baselineHours * available / total;
-  const monthEnd = ym + '-' + ctPad(total);
-  const monthStart = ym + '-01';
   return {
-    ym, reg, total, days, available, unavailableDays,
-    counts: { maint: nMaint, weather: nWeather, forcedOff: nForcedOff, forcedOn: nForcedOn, before: nBefore },
-    baseline: ctFloorTenth(rawBaseline),
-    status: (eff && monthEnd < eff) ? 'na' : (monthEnd < ctx.todayStr ? 'closed' : (monthStart > ctx.todayStr ? 'future' : 'open')),
+    ym, reg, total, days, available, unavailableDays, baselineHours,
+    counts: { maint: nMaint, weather: nWeather, forcedOff: nForcedOff, forcedOn: nForcedOn },
+    baseline: ctFloorTenth(baselineHours * available / total),
+    status: monthEnd < ctx.todayStr ? 'closed' : (monthStart > ctx.todayStr ? 'future' : 'open'),
   };
 }
 
 // One aircraft, one cycle: rolling balance of credit (+) / deficit (-).
 // ctx additionally has: invoices { "REG|YYYY-MM": { invoicedHours, ownerHours } }
 function ctCycle(reg, startYM, ctx){
-  const s = ctx.settings;
-  const months = ctCycleMonths(startYM, s.cycleLengthMonths).map(ym => {
+  const s = ctx.settings, ac = ctAircraft(s, reg);
+  const len = ac.cycleMonths || 3;
+  const months = ctCycleMonths(startYM, len).map(ym => {
     const m = ctMonth(reg, ym, ctx);
     const inv = (ctx.invoices || {})[reg + '|' + ym] || null;
     m.invoice = inv;
@@ -1167,13 +1184,17 @@ function ctCycle(reg, startYM, ctx){
   const deficit = Math.max(0, ctRound2(-balance));
   const credit = Math.max(0, ctRound2(balance));
   const complete = allIn && allClosed;
-  const r = s.rate;
-  const exVat = ctRound2(deficit * r.perHour * r.multiplier);
+  const lastYM = months[months.length - 1].ym;
+  const cycleEnd = lastYM + '-' + ctPad(ctDim(lastYM));
+  const perHour = ctRateOn(ac, cycleEnd);
+  const bill = s.billing;
+  const exVat = ctRound2(deficit * perHour * bill.multiplier);
   return {
     reg, startYM, months, balance, deficit, credit, complete,
     state: complete ? 'final' : 'provisional',
     billable: complete ? deficit : null,
-    rand: { exVat, vat: ctRound2(exVat * r.vatPercent / 100), inclVat: ctRound2(exVat * (1 + r.vatPercent / 100)) },
+    perHour,
+    rand: { exVat, vat: ctRound2(exVat * bill.vatPercent / 100), inclVat: ctRound2(exVat * (1 + bill.vatPercent / 100)) },
   };
 }
 // ==== CONTRACT ENGINE END ====
@@ -1242,15 +1263,14 @@ function ctMonthCardHtml(m, s){
   const name = ctMonthName(m.ym);
   if(m.status === 'na'){
     return `<div class="card ct-card na"><div class="mrow"><b>${name}</b><span class="ct-chip">not in effect</span></div>
-      <div class="ct-math">This month is before the addendum took effect (${ctEsc(s.aircraft[m.reg].effectiveFrom)}).</div></div>`;
+      <div class="ct-math">Tracking for ${m.reg} starts in ${ctMonthName(s.aircraft[m.reg].startMonth)}.</div></div>`;
   }
   const parts = [`${m.total} days`];
   if(m.counts.maint) parts.push(`&minus; ${m.counts.maint} maintenance`);
   if(m.counts.weather) parts.push(`&minus; ${m.counts.weather} weather`);
   if(m.counts.forcedOff) parts.push(`&minus; ${m.counts.forcedOff} added by you`);
   if(m.counts.forcedOn) parts.push(`+ ${m.counts.forcedOn} released by you`);
-  if(m.counts.before) parts.push(`&minus; ${m.counts.before} before effective date`);
-  const baseLine = `Baseline <code>${s.baselineHours} &times; ${m.available}/${m.total} = ${ctFmt(m.baseline)} h</code> &middot; ${parts.join(' ')}`;
+  const baseLine = `Baseline <code>${m.baselineHours} &times; ${m.available}/${m.total} = ${ctFmt(m.baseline)} h</code> &middot; ${parts.join(' ')}`;
 
   let right, cls = '', bar = '';
   if(m.counted !== null){
@@ -1281,10 +1301,13 @@ function renderContract(){
   if(!ctAc || regs.indexOf(ctAc) === -1) ctAc = regs[0];
   const ctx = ctBuildCtx();
   const todayYM = ctx.todayStr.slice(0, 7);
-  const currentCycle = ctCycleStart(todayYM, s.cycleAnchor, s.cycleLengthMonths);
-  if(!ctCycleYM) ctCycleYM = currentCycle;
+  const ac = s.aircraft[ctAc];
+  const cycleLen = ac.cycleMonths || 3;
+  const firstCycle = ac.startMonth;
+  const currentCycle = todayYM < firstCycle ? firstCycle : ctCycleStart(todayYM, ac.startMonth, cycleLen);
+  if(!ctCycleYM || ctCycleYM < firstCycle) ctCycleYM = currentCycle;
   const cy = ctCycle(ctAc, ctCycleYM, ctx);
-  const lastYM = ctAddMonths(ctCycleYM, s.cycleLengthMonths - 1);
+  const lastYM = ctAddMonths(ctCycleYM, cycleLen - 1);
   const isCurrent = ctCycleYM === currentCycle;
   const chips = regs.map(r => `<button type="button" class="chip ${r===ctAc?'on':''}" data-ac="${r}">${r}</button>`).join('');
 
@@ -1293,7 +1316,7 @@ function renderContract(){
     result = cy.deficit > 0
       ? `<div class="card ct-result bad"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--red)">${ctFmt(cy.deficit)} h</span>
           <span class="mono">&asymp; ${ctRand(cy.rand.exVat)} + VAT</span></div>
-          <div class="ct-dim">${ctRand(cy.rand.inclVat)} incl. ${s.rate.vatPercent}% VAT &middot; estimate at R${s.rate.perHour} &times; ${s.rate.multiplier} per hour &mdash; check against the contract.</div></div>`
+          <div class="ct-dim">${ctRand(cy.rand.inclVat)} incl. ${s.billing.vatPercent}% VAT &middot; estimate at R${cy.perHour.toLocaleString('en-ZA')}/h &times; ${s.billing.multiplier} &mdash; check against the contract.</div></div>`
       : `<div class="card ct-result ok"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--green)">None</span></div>
           <div class="ct-dim">No deficit at the end of the cycle${cy.credit > 0 ? ` (${ctFmt(cy.credit)} h surplus does not carry into the next cycle)` : ''}.</div></div>`;
   } else {
@@ -1308,16 +1331,16 @@ function renderContract(){
     <div class="ct-top"><span class="pill ok">&#128275; unlocked</span>
       <span><button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
     <div class="chips">${chips}</div>
-    <div class="cal-nav"><button type="button" id="ctPrev" aria-label="Previous cycle">&#9664;</button>
+    <div class="cal-nav"><button type="button" id="ctPrev" aria-label="Previous cycle" ${ctCycleYM <= firstCycle ? 'disabled' : ''}>&#9664;</button>
       <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)}<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')}</span></b>
       <button type="button" id="ctNext" aria-label="Next cycle">&#9654;</button></div>
     ${cy.months.map(m => ctMonthCardHtml(m, s)).join('')}
     ${result}
     <div class="hint">Every calendar day counts. Maintenance days come from the Fleet log; weather days from this dashboard's own logged checks (${s.weatherRule.windowStart}&ndash;${s.weatherRule.windowEnd}, fewer than ${s.weatherRule.minFlyableHours} flyable hours). Tap a month to add or release individual days.</div>`;
 
-  holder.querySelectorAll('.chip[data-ac]').forEach(b => b.addEventListener('click', () => { ctAc = b.dataset.ac; renderContract(); }));
-  document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -s.cycleLengthMonths); renderContract(); });
-  document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, s.cycleLengthMonths); renderContract(); });
+  holder.querySelectorAll('.chip[data-ac]').forEach(b => b.addEventListener('click', () => { ctAc = b.dataset.ac; ctCycleYM = null; renderContract(); }));
+  document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -cycleLen); renderContract(); });
+  document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, cycleLen); renderContract(); });
   document.getElementById('ctLockBtn').addEventListener('click', ownerLock);
   document.getElementById('ctSettingsBtn').addEventListener('click', openSettingsSheet);
   holder.querySelectorAll('.ct-card[data-month]').forEach(c => {
@@ -1339,17 +1362,17 @@ function renderMonthSheet(){
   if(!body || !ctMonthOpen || !ownerData) return;
   const s = ownerData.settings, ym = ctMonthOpen;
   const ctx = ctBuildCtx();
-  const cy = ctCycle(ctAc, ctCycleStart(ym, s.cycleAnchor, s.cycleLengthMonths), ctx);
+  const acs = s.aircraft[ctAc];
+  const cy = ctCycle(ctAc, ctCycleStart(ym, acs.startMonth, acs.cycleMonths || 3), ctx);
   const m = cy.months.find(x => x.ym === ym);
   const inv = m.invoice;
   const lead = (new Date(ym + '-01T12:00:00Z').getUTCDay() + 6) % 7;
   let cells = ['M','T','W','T','F','S','S'].map(d => `<span class="ct-h">${d}</span>`).join('') + '<span></span>'.repeat(lead);
   const label = {ok:'available', maint:'maintenance', weather:'weather (non-flying)', 'forced-off':'marked unavailable by you', 'forced-on':'released by you',
-    nodata:'no weather data logged', pending:'day not finished', future:'future', before:'before effective date'};
+    nodata:'no weather data logged', pending:'day not finished', future:'future'};
   m.days.forEach(d => {
     const n = parseInt(d.date.slice(8));
-    const tappable = d.kind !== 'before';
-    cells += `<button type="button" class="ct-d ${d.kind}${d.override ? ' ovr' : ''}" ${tappable ? `data-date="${d.date}"` : 'disabled'} aria-label="${d.date}: ${label[d.kind]}">${n}</button>`;
+    cells += `<button type="button" class="ct-d ${d.kind}${d.override ? ' ovr' : ''}" data-date="${d.date}" aria-label="${d.date}: ${label[d.kind]}">${n}</button>`;
   });
   const q = (v) => (v === undefined || v === null) ? '' : v;
   body.innerHTML = `
@@ -1365,9 +1388,8 @@ function renderMonthSheet(){
       <div class="kv"><span>Weather days (dashboard logs)</span><b>${m.counts.weather}</b></div>
       ${m.counts.forcedOff ? `<div class="kv"><span>Added by you</span><b>${m.counts.forcedOff}</b></div>` : ''}
       ${m.counts.forcedOn ? `<div class="kv"><span>Released by you</span><b>${m.counts.forcedOn}</b></div>` : ''}
-      ${m.counts.before ? `<div class="kv"><span>Before effective date</span><b>${m.counts.before}</b></div>` : ''}
       <div class="kv"><span>Available days</span><b>${m.available}</b></div>
-      <div class="kv"><span>Adjusted baseline (${s.baselineHours} &times; ${m.available}/${m.total}, rounded down)</span><b class="mono">${ctFmt(m.baseline)} h</b></div>
+      <div class="kv"><span>Adjusted baseline (${m.baselineHours} &times; ${m.available}/${m.total}, rounded down)</span><b class="mono">${ctFmt(m.baseline)} h</b></div>
     </div>
     <div class="card">
       <div class="fld"><div><label for="ct_inv">Invoiced hours</label><input class="f" id="ct_inv" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.invoicedHours)}"></div>
@@ -1424,29 +1446,38 @@ function renderMonthSheet(){
 }
 
 // ----- settings sheet -----
+function ctRateRowHtml(r){
+  return `<div class="ct-raterow"><input class="f" data-f="rfrom" type="date" value="${ctEsc(r.from)}" aria-label="Price applies from">
+    <span class="ct-rand">R</span><input class="f" data-f="rprice" type="number" step="1" min="0" value="${r.perHour}" aria-label="Hourly rate in Rand, excluding VAT">
+    <button type="button" class="ct-rm" aria-label="Remove this price">&#10005;</button></div>`;
+}
+function ctAircraftBlockHtml(reg, a){
+  return `<div class="card ct-acblock" data-reg="${reg}">
+    <div class="mrow"><b class="mono">${reg}</b><label class="checkline" style="margin:0"><input type="checkbox" data-f="on" ${a.enabled !== false ? 'checked' : ''}> tracked</label></div>
+    <div class="field"><label>Description</label><input class="f" data-f="label" type="text" value="${ctEsc(a.label)}" placeholder="aircraft type"></div>
+    <div class="form-grid">
+      <div class="field"><label>Contract tracking starts (first invoice month)</label><input class="f" data-f="start" type="month" value="${ctEsc(a.startMonth)}"></div>
+      <div class="field"><label>Cycle length (invoices)</label><input class="f" data-f="len" type="number" step="1" min="1" max="12" value="${a.cycleMonths || 3}"></div>
+      <div class="field"><label>Guaranteed hours / month</label><input class="f" data-f="base" type="number" step="0.5" min="0" value="${a.baselineHours !== undefined ? a.baselineHours : 40}"></div>
+    </div>
+    <label style="margin-top:6px;">Hourly rate, excl. VAT &mdash; add a new line when the price changes (it applies from that date)</label>
+    <div class="ct-rates">${(a.rates || []).map(ctRateRowHtml).join('')}</div>
+    <button type="button" class="ct-addrate">+ price change</button>
+  </div>`;
+}
 function openSettingsSheet(){
   const s = ownerData.settings, w = s.weatherRule;
-  const acRows = Object.keys(s.aircraft).map(reg => {
-    const a = s.aircraft[reg];
-    return `<div class="ct-acrow" data-reg="${reg}"><b class="mono">${reg}</b>
-      <input class="f" data-f="label" type="text" value="${ctEsc(a.label)}" placeholder="type" aria-label="${reg} description">
-      <input class="f" data-f="eff" type="date" value="${ctEsc(a.effectiveFrom || '')}" aria-label="${reg} addendum effective from">
-      <label class="checkline"><input type="checkbox" data-f="on" ${a.enabled !== false ? 'checked' : ''}> on</label></div>`;
-  }).join('');
   const body = document.getElementById('settingsSheetBody');
   body.innerHTML = `
     <div class="sheet-head"><b>Contract settings</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
-    <div class="section-title">Utilisation</div>
+    <div class="section-title">Aircraft &mdash; each has its own contract clock</div>
+    <div class="hint" style="margin-top:0">Cycles run invoice to invoice from the first month entered here (for example 2026-11 gives Nov&ndash;Jan, Feb&ndash;Apr, &hellip;). A new aircraft just gets its own start month.</div>
+    <div id="st_aircraft">${Object.keys(s.aircraft).map(reg => ctAircraftBlockHtml(reg, s.aircraft[reg])).join('')}</div>
+    <div class="card"><label for="st_newreg">Add an aircraft</label><div style="display:flex; gap:8px;"><input class="f" id="st_newreg" type="text" placeholder="registration, e.g. ZU-ABC" maxlength="10" style="margin-top:0;"><button type="button" id="st_addac">Add</button></div></div>
+    <div class="section-title">Billing estimate</div>
     <div class="form-grid">
-      <div class="field"><label for="st_base">Baseline hours / month</label><input id="st_base" type="number" step="0.5" min="0" value="${s.baselineHours}"></div>
-      <div class="field"><label for="st_len">Cycle length (months)</label><input id="st_len" type="number" step="1" min="1" max="12" value="${s.cycleLengthMonths}"></div>
-      <div class="field"><label for="st_anchor">A cycle starts on</label><input id="st_anchor" type="date" value="${ctEsc(s.cycleAnchor)}"></div>
-    </div>
-    <div class="section-title">Rand estimate (not part of the maths)</div>
-    <div class="form-grid">
-      <div class="field"><label for="st_rate">Rate per hour (R)</label><input id="st_rate" type="number" step="1" min="0" value="${s.rate.perHour}"></div>
-      <div class="field"><label for="st_mult">Tacho multiplier</label><input id="st_mult" type="number" step="0.01" min="0" value="${s.rate.multiplier}"></div>
-      <div class="field"><label for="st_vat">VAT %</label><input id="st_vat" type="number" step="0.5" min="0" value="${s.rate.vatPercent}"></div>
+      <div class="field"><label for="st_mult">Tacho multiplier (contract rate clause)</label><input id="st_mult" type="number" step="0.01" min="0" value="${s.billing.multiplier}"></div>
+      <div class="field"><label for="st_vat">VAT %</label><input id="st_vat" type="number" step="0.5" min="0" value="${s.billing.vatPercent}"></div>
     </div>
     <div class="section-title">What counts as a non-flying weather day</div>
     <div class="form-grid">
@@ -1457,39 +1488,58 @@ function openSettingsSheet(){
     <div class="checkline"><input type="checkbox" id="st_wen" ${w.enabled ? 'checked' : ''}> <label for="st_wen" style="margin:0">Count weather days automatically</label></div>
     <div class="checkline" style="margin-top:6px;"><input type="checkbox" id="st_caut" ${w.cautionCountsAsFlyable ? 'checked' : ''}> <label for="st_caut" style="margin:0">CAUTION hours count as flyable</label></div>
     <div class="checkline" style="margin-top:6px;"><input type="checkbox" id="st_rel" ${s.releaseDayCountsAsUnavailable ? 'checked' : ''}> <label for="st_rel" style="margin:0">The day an aircraft is released still counts as unavailable</label></div>
-    <div class="section-title" style="margin-top:14px;">Aircraft &amp; the day each addendum took effect</div>
-    ${acRows}
-    <div class="ct-acrow" id="st_newrow"><input class="f" id="st_newreg" type="text" placeholder="add registration, e.g. ZU-ABC" maxlength="10" style="grid-column:1 / -1;"></div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">
       <button type="button" id="stSave" class="primary">Save settings</button>
       <button type="button" id="stBackup">Download backup</button></div>
     <div id="st_msg" class="hint"></div>`;
 
+  const wireBlock = (blk) => {
+    blk.querySelector('.ct-addrate').addEventListener('click', () => {
+      const today = localNow().dateStr;
+      const last = blk.querySelectorAll('.ct-raterow [data-f=rprice]');
+      const prev = last.length ? last[last.length - 1].value : 0;
+      blk.querySelector('.ct-rates').insertAdjacentHTML('beforeend', ctRateRowHtml({from: today, perHour: prev}));
+    });
+    blk.addEventListener('click', (e) => {
+      const rm = e.target.closest ? e.target.closest('.ct-rm') : null;
+      if(rm && blk.querySelectorAll('.ct-raterow').length > 1) rm.closest('.ct-raterow').remove();
+    });
+  };
+  body.querySelectorAll('.ct-acblock').forEach(wireBlock);
+
+  document.getElementById('st_addac').addEventListener('click', () => {
+    const msg = document.getElementById('st_msg');
+    const reg = document.getElementById('st_newreg').value.trim().toUpperCase();
+    if(!/^[A-Z0-9-]{3,10}$/.test(reg)){ msg.textContent = 'That registration doesn\'t look right.'; return; }
+    if(body.querySelector('.ct-acblock[data-reg="' + reg + '"]')){ msg.textContent = reg + ' is already listed.'; return; }
+    const start = localNow().dateStr.slice(0, 7);
+    document.getElementById('st_aircraft').insertAdjacentHTML('beforeend',
+      ctAircraftBlockHtml(reg, {label: '', startMonth: start, cycleMonths: 3, baselineHours: 40, rates: [{from: start + '-01', perHour: 1800}], enabled: true}));
+    wireBlock(body.querySelector('.ct-acblock[data-reg="' + reg + '"]'));
+    document.getElementById('st_newreg').value = ''; msg.textContent = reg + ' added \u2014 set its start month and rate, then Save.';
+  });
+
   document.getElementById('stSave').addEventListener('click', async () => {
     const msg = document.getElementById('st_msg');
     const aircraft = {};
-    body.querySelectorAll('.ct-acrow[data-reg]').forEach(row => {
-      aircraft[row.dataset.reg] = {
-        label: row.querySelector('[data-f=label]').value,
-        effectiveFrom: row.querySelector('[data-f=eff]').value || null,
-        enabled: row.querySelector('[data-f=on]').checked
+    body.querySelectorAll('.ct-acblock').forEach(blk => {
+      aircraft[blk.dataset.reg] = {
+        label: blk.querySelector('[data-f=label]').value,
+        startMonth: blk.querySelector('[data-f=start]').value,
+        cycleMonths: blk.querySelector('[data-f=len]').value,
+        baselineHours: blk.querySelector('[data-f=base]').value,
+        enabled: blk.querySelector('[data-f=on]').checked,
+        rates: Array.from(blk.querySelectorAll('.ct-raterow')).map(r => ({from: r.querySelector('[data-f=rfrom]').value, perHour: r.querySelector('[data-f=rprice]').value}))
       };
     });
-    const nr = document.getElementById('st_newreg').value.trim().toUpperCase();
-    if(nr){
-      if(!/^[A-Z0-9-]{3,10}$/.test(nr)){ msg.textContent = 'That registration doesn\'t look right.'; return; }
-      aircraft[nr] = {label: '', effectiveFrom: null, enabled: true};
-    }
     const settings = {
-      baselineHours: document.getElementById('st_base').value, cycleLengthMonths: document.getElementById('st_len').value,
-      cycleAnchor: document.getElementById('st_anchor').value,
-      rate: {perHour: document.getElementById('st_rate').value, multiplier: document.getElementById('st_mult').value, vatPercent: document.getElementById('st_vat').value},
+      billing: {multiplier: document.getElementById('st_mult').value, vatPercent: document.getElementById('st_vat').value},
       weatherRule: {enabled: document.getElementById('st_wen').checked, windowStart: document.getElementById('st_ws').value, windowEnd: document.getElementById('st_we').value,
         minFlyableHours: document.getElementById('st_min').value, cautionCountsAsFlyable: document.getElementById('st_caut').checked},
       releaseDayCountsAsUnavailable: document.getElementById('st_rel').checked,
       aircraft: aircraft
     };
-    msg.textContent = 'saving…';
+    msg.textContent = 'saving\u2026';
     try{
       const r = await ownerCall('/owner/settings', {settings});
       ownerData = r.data; ctCycleYM = null; renderContract(); closeSheets();

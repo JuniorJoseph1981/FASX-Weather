@@ -36,19 +36,28 @@ the password on every request (and locks an IP out for 15 minutes after 6 wrong 
 
 What it calculates, per aircraft, following the signed addenda:
 
-- **Adjusted monthly baseline** = `40 × available days ÷ days in month`, rounded **down** to 0.1 h.
-  Every calendar day counts (Sundays and holidays included).
+- **Adjusted monthly baseline** = `guaranteed hours × available days ÷ days in month`, rounded
+  **down** to 0.1 h (40 h today). Every calendar day counts (Sundays and holidays included).
 - **Unavailable days** = maintenance days (from the Fleet grounding log) + non-flying weather days
   (decided automatically from this dashboard's own logged weather) + any days you add; a day
   that is both counts once. You can override any single day.
-- **3-month cycles** starting 1 November (Nov–Jan, Feb–Apr, May–Jul, Aug–Oct): surplus hours are
-  credit, shortfalls roll forward as deficit, and any deficit left at the end of the cycle is billed.
+- **Cycles run invoice to invoice** (3 invoices by default): surplus hours are credit, shortfalls
+  roll forward as deficit, and any deficit left at the end of the cycle is billed. Credit does not
+  carry into the next cycle.
 - You type in each month's **invoiced hours** (and any owner-flying hours to exclude); the page
   shows the surplus/shortfall, the running balance and the cycle-end deficit with a Rand estimate.
 
-Everything adjustable lives under **Contract → Settings** (baseline hours, cycle length and start,
-the weather-day rule, release-day rule, rate for the Rand estimate, each aircraft and the date its
-addendum took effect) — no code change needed. **Download backup** saves everything as JSON.
+**Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts fresh on
+**1 November 2026** (cycles Nov–Jan, Feb–Apr, May–Jul, Aug–Oct) and nothing before that is counted.
+A new aircraft gets its own start month (the first invoice month), so its cycles run from its own
+first invoice and never roll from a mid-month date.
+
+Everything adjustable lives under **Contract → Settings**, no code change needed:
+per aircraft — start month, cycle length, guaranteed hours, whether it is tracked, and the **hourly
+rate (R1,800 ex VAT today)**; when prices rise, add a **price change** with the date it applies from
+(a cycle is estimated at the rate in force on its last day, so old cycles never change). Also the
+tacho multiplier and VAT for the estimate, the weather-day rule, and the release-day rule.
+**Download backup** saves everything as JSON.
 
 The weather-day rule is an *estimate from this dashboard's data* and is kept separate from
 Heritage's booking system. The contract only recognises weather days where booked flights were
