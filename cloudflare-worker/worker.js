@@ -643,32 +643,58 @@ function ghConfig(env) {
   };
 }
 
+// Read a file's text and sha, or null if it does not exist yet.
+// GitHub's normal JSON read only works up to 1 MB. The weather log grows ~6 KB a day, so past ~1 MB the
+// JSON read is refused (403 "too_large") and logging would silently stop. For bigger files (up to 100 MB)
+// fall back to the directory listing (which still gives the sha) plus the raw media type.
+async function readGithubFile(cfg, path) {
+  const apiBase = cfg.apiBase(path);
+  const res = await fetch(`${apiBase}?ref=${cfg.branch}`, { headers: cfg.headers });
+  if (res.status === 404) return null;
+  let tooLarge = res.status === 403;
+  if (res.status === 200) {
+    const data = await res.json();
+    if (data.encoding !== "none" && typeof data.content === "string") {
+      return { sha: data.sha, text: b64DecodeUtf8(data.content) };
+    }
+    tooLarge = true;                                   // 200 with empty content = too large for the JSON read
+  }
+  if (!tooLarge) {
+    const err = new Error("GitHub read failed");
+    err.status = 502; err.detail = await res.text();
+    throw err;
+  }
+  const slash = path.lastIndexOf("/");
+  const dir = slash === -1 ? "" : path.slice(0, slash);
+  const name = path.slice(slash + 1);
+  const listRes = await fetch(`${cfg.apiBase(dir)}?ref=${cfg.branch}`, { headers: cfg.headers });
+  const list = listRes.ok ? await listRes.json() : null;
+  const entry = Array.isArray(list) ? list.find((e) => e.name === name && e.type === "file") : null;
+  if (!entry) {
+    const err = new Error("GitHub read failed (large file: could not find it in the directory listing)");
+    err.status = 502; err.detail = listRes.ok ? "" : await listRes.text();
+    throw err;
+  }
+  const rawRes = await fetch(`${apiBase}?ref=${cfg.branch}`, { headers: { ...cfg.headers, Accept: "application/vnd.github.raw+json" } });
+  if (!rawRes.ok) {
+    const err = new Error("GitHub read failed (large file)");
+    err.status = 502; err.detail = await rawRes.text();
+    throw err;
+  }
+  return { sha: entry.sha, text: await rawRes.text() };
+}
+
 // Read a file, let `mutate(existingText|"")` return the new text (or null to cancel), write it back.
 async function updateGithubFile(env, path, mutate, commitMessage) {
   const cfg = ghConfig(env);
-  const apiBase = cfg.apiBase(path);
-
-  let existingContent = "";
-  let sha = null;
-  const getRes = await fetch(`${apiBase}?ref=${cfg.branch}`, { headers: cfg.headers });
-  if (getRes.status === 200) {
-    const data = await getRes.json();
-    sha = data.sha;
-    existingContent = b64DecodeUtf8(data.content);
-  } else if (getRes.status !== 404) {
-    const errText = await getRes.text();
-    const err = new Error("GitHub read failed");
-    err.status = 502; err.detail = errText;
-    throw err;
-  }
-
-  const newContent = mutate(existingContent);
+  const existing = await readGithubFile(cfg, path);
+  const newContent = mutate(existing ? existing.text : "");
   if (newContent === null) return false;
 
   const putBody = { message: commitMessage, content: b64EncodeUtf8(newContent), branch: cfg.branch };
-  if (sha) putBody.sha = sha;
+  if (existing) putBody.sha = existing.sha;
 
-  const putRes = await fetch(apiBase, {
+  const putRes = await fetch(cfg.apiBase(path), {
     method: "PUT",
     headers: { ...cfg.headers, "Content-Type": "application/json" },
     body: JSON.stringify(putBody),

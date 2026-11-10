@@ -10,16 +10,26 @@ class MockKV {
   async delete(k) { this.m.delete(k); }
 }
 
-// In-memory stand-in for the GitHub "contents" API.
+// In-memory stand-in for the GitHub "contents" API, including its 1 MB rule: files over 1 MB cannot be read as JSON
+// (403 too_large) - only via the raw media type - but directory listings still return each file's sha.
 function installGithub(files) {
   const real = globalThis.fetch;
   globalThis.fetch = async (url, opts = {}) => {
     const u = new URL(url);
     if (u.hostname !== "api.github.com") throw new Error("unexpected fetch " + url);
-    const path = u.pathname.replace(/^\/repos\/[^/]+\/[^/]+\/contents\//, "");
+    const path = u.pathname.replace(/^\/repos\/[^/]+\/[^/]+\/contents\/?/, "");
+    const accept = (opts.headers && opts.headers.Accept) || "";
     if ((opts.method || "GET") === "GET") {
-      if (!files.has(path)) return new Response("{}", { status: 404 });
-      return Response.json({ sha: "sha-" + files.get(path).v, content: Buffer.from(files.get(path).text).toString("base64") });
+      if (files.has(path)) {
+        const f = files.get(path);
+        if (accept.includes("raw")) return new Response(f.text);
+        if (f.text.length > 1000000) return new Response(JSON.stringify({ message: "too large", errors: [{ code: "too_large" }] }), { status: 403 });
+        return Response.json({ sha: "sha-" + f.v, content: Buffer.from(f.text).toString("base64") });
+      }
+      const prefix = path === "" ? "" : path + "/";
+      const kids = [...files.keys()].filter((k) => k.startsWith(prefix) && !k.slice(prefix.length).includes("/"));
+      if (kids.length) return Response.json(kids.map((k) => ({ name: k.slice(prefix.length), path: k, type: "file", sha: "sha-" + files.get(k).v, size: files.get(k).text.length })));
+      return new Response("{}", { status: 404 });
     }
     const body = JSON.parse(opts.body);
     const cur = files.get(path);
@@ -259,5 +269,23 @@ test("the scheduled weather log stamps rows with the actual current SAST minute"
     const sast = new Date(Date.now() + 2 * 3600000).toISOString().slice(0, 16);
     assert.ok(Math.abs(Date.parse(first + "Z") - Date.parse(sast + "Z")) <= 120000, "not the current time: " + first);
     assert.equal(text[1].split(",").slice(-2)[1], "station");
+  } finally { restore(); }
+});
+
+test("the weather log keeps being written after it passes GitHub's 1 MB read limit", async () => {
+  const header = "LocalTime,Fc_WindDir,Fc_WindSpeed_kt,Fc_Gust_kt,Fc_Visibility_km,Fc_CeilingEst_ft,Fc_Precip,Fc_Temp_C,Fc_Dew_C,Fc_Cloud_pct,St_Status,St_WindDir,St_WindAvg_kt,St_WindGust_kt,St_Temp_C,St_Dew_C,St_Pressure_hPa,St_RainToday_mm,St_RainRate_mm_hr,St_CeilingEst_ft,St_Precip,St_Time,Verdict,VerdictSource\n";
+  const row = "2026-07-29T21:00,61,3,8,44.8,,None,10.3,7.0,2,ON-LINE,NW,1.1,2.2,10.2,8.5,1024.68,0.0,0.0,712,None,2026-07-29 23:01:04,NO-FLY,station\n";
+  const big = header + row.repeat(Math.ceil(1100000 / row.length));          // ~1.1 MB
+  const files = new Map([["data/forecast_log.csv", { v: 1, text: big }]]);
+  const restore = installWeather(files);
+  try {
+    let done; const p = new Promise((r) => { done = r; });
+    await worker.scheduled({}, { ...baseEnv(), IWEATHAR_KEY: "k" }, { waitUntil: (pr) => pr.then(done) });
+    await p;
+    const after = files.get("data/forecast_log.csv");
+    assert.equal(after.v, 2, "the big file was not updated");
+    assert.ok(after.text.startsWith(big), "existing history must be preserved");
+    const added = after.text.slice(big.length);
+    assert.match(added, /^\d{4}-\d\d-\d\dT\d\d:\d\d,.*,station\n$/);
   } finally { restore(); }
 });
