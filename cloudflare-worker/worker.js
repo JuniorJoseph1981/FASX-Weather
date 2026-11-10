@@ -50,14 +50,15 @@ const LOCKOUT_SECONDS = 900;         // ... within this window
 //
 // Each aircraft has its OWN contract clock, so a new aircraft can start whenever its first
 // invoice period begins:
-//   startMonth      first invoice month that counts ("YYYY-MM"); cycles run invoice-to-invoice from it
+//   startMonth      first month of HOURS that counts ("YYYY-MM"); its invoice is issued the following month
+//                   (October hours arrive on the November invoice). Cycles run invoice-to-invoice from it
 //   cycleMonths     length of one cycle (3 = quarterly)
 //   baselineHours   guaranteed billed hours per month
 //   rates           hourly price history [{from, perHour}] (ex VAT); the rate in force on the last day
 //                   of a cycle is used for the cycle-end estimate, so a price rise never changes old cycles
-const DEFAULT_START_MONTH = "2026-11";
+const DEFAULT_START_MONTH = "2026-10";   // October hours = the invoice issued in November, the first tracked invoice
 const DEFAULT_SETTINGS = {
-  billing: { multiplier: 1.2, vatPercent: 15 },    // multiplier = tacho factor in the contract rate clause
+  billing: { multiplier: 1, vatPercent: 15 },      // multiplier on deficit hours; 1 because invoiced hours already include the tacho x 1.2
   weatherRule: {
     enabled: true,
     windowStart: "07:00",                          // daylight window the logged checks are judged over
