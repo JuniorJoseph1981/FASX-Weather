@@ -47,15 +47,17 @@ What it calculates, per aircraft, following the signed addenda:
 - You type in each month's **invoiced hours** (and any owner-flying hours to exclude); the page
   shows the surplus/shortfall, the running balance and the cycle-end deficit with a Rand estimate.
 
-**Hours are labelled by the month they were flown, not the month they are invoiced.** The invoice
-issued in November carries **October's hours**, so you enter it against October (and use October's
-flyable/unavailable days); November's hours arrive on the December invoice. The Contract tab shows
-"October 2026 hours — invoice issued in November" on every card.
+**Hours are labelled by the month they were flown.** You prepare each invoice the month after, using
+the previous month's hours and flying days, and date it the last day of the month it covers. In
+November you work out **October** (October's flyable/unavailable days, October's hours) and issue the
+invoice **dated 31 October**; November's hours are done in December and dated 30 November. Every card
+reads "October 2026 hours — invoice dated 31 October · prepared in November", and a banner at the top
+opens the invoice you are due to prepare.
 
 **Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts with the
-**October 2026 hours** — the invoice issued in **November 2026** — so the first cycle is Oct–Dec hours
-(invoices issued Nov, Dec, Jan), then Jan–Mar, Apr–Jun, … Nothing before October is counted.
-A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
+**October 2026 hours** (the invoice dated 31 October, prepared in November), so the first cycle is
+Oct–Dec hours (invoices dated 31 Oct, 30 Nov, 31 Dec), then Jan–Mar, Apr–Jun, … Nothing before October
+is counted. A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
 from a mid-month date.
 
 Everything adjustable lives under **Contract → Settings**, no code change needed:
@@ -95,12 +97,12 @@ The Worker needs these (Cloudflare dashboard → Worker `fasx-log` → Settings 
 | `AIRCRAFT_PASSWORD` | secret | already set — the same password now also unlocks the Contract tab (`OWNER_PASSWORD` works as an alternative name) |
 | `FASX_KV` | KV binding | created and bound automatically by the deploy workflow |
 
-**Deploying from GitHub:** add two repository **secrets** (Settings → Secrets and variables → Actions → *Secrets*):
+**Deploying from GitHub (automatic):** add two repository **secrets** (Settings → Secrets and variables → Actions → *Secrets*):
 `CLOUDFLARE_API_TOKEN` (a custom token with *Account → Workers Scripts: Edit* and *Account → Workers KV Storage: Edit*)
-and `CLOUDFLARE_ACCOUNT_ID`. No repository *variables* are needed. Then run **Actions → Deploy Cloudflare Worker → Run workflow**. It runs the
-tests, creates the KV namespace if needed, deploys, and checks `/health`. Dashboard variables and
-secrets are kept. Once a manual deploy has been verified, enable automatic deploys by un-commenting
-the `push:` trigger in `deploy-worker.yml`.
+and `CLOUDFLARE_ACCOUNT_ID`. No repository *variables* are needed. After that, every merge to `main` that changes
+the Worker deploys it by itself (**Actions → Deploy Cloudflare Worker**; it can also be run by hand). It runs the
+tests first, so a broken Worker never goes live, then creates the KV namespace if needed, deploys, and checks
+`/health` (which shows the Worker's `version`). Dashboard variables and secrets are kept.
 
 `GET <worker-url>/health` reports whether storage and the owner password are configured (booleans
 only, no secrets).
