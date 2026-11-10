@@ -51,6 +51,10 @@ jobs:
           if ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[0-9a-f]{32}$'; then
             echo "::error::CLOUDFLARE_ACCOUNT_ID should be exactly 32 letters/numbers (found ${#CLOUDFLARE_ACCOUNT_ID} characters). Copy 'Account ID' from Workers & Pages."; exit 1
           fi
+          echo "token length: ${#CLOUDFLARE_API_TOKEN} characters (a Cloudflare API token is 40)"
+          if ! printf '%s' "$CLOUDFLARE_API_TOKEN" | grep -Eq '^[A-Za-z0-9_-]{40}$'; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not a 40-character Cloudflare token (found ${#CLOUDFLARE_API_TOKEN} characters). Common mistakes: copying the token NAME, the 'Token ID', a curl command, or the word 'Bearer'. Roll the token in Cloudflare, copy only the new value, and update the secret."; exit 1
+          fi
           auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
           user=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" https://api.cloudflare.com/client/v4/user/tokens/verify)
           acct=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify")
