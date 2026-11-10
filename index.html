@@ -396,6 +396,8 @@
   .ct-hrow{width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; text-align:left; border-radius:10px; font-size:13px;}
   .ct-hrow.sel{border-color:var(--cyan);}
   .ct-due{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 14px; margin-bottom:10px; border-radius:12px; background:var(--amber-dim); border:1px solid var(--amber-line);}
+  .ct-duebtns{display:flex; gap:8px; flex-wrap:wrap;}
+  .ct-due .ct-dim{color:var(--text); opacity:.8;}
   .ct-due.ok{background:var(--green-dim); border-color:var(--green-line);}
 </style>
 <script>
@@ -1365,20 +1367,26 @@ function renderContract(){
   const cycleLen = ac.cycleMonths || 3;
   const firstCycle = ac.startMonth;
   const currentCycle = todayYM < firstCycle ? firstCycle : ctCycleStart(todayYM, ac.startMonth, cycleLen);
-  if(!ctCycleYM || ctCycleYM < firstCycle) ctCycleYM = currentCycle;
+  // Months that have finished but have no hours entered yet (oldest first). Each month's credit/deficit carries
+  // into the next, so they are worked through in order.
+  const dueList = [];
+  for(let y = firstCycle; y < todayYM; y = ctAddMonths(y, 1)){
+    if(!(ownerData.months || {})[ctAc + '|' + y]) dueList.push(y);
+  }
+  const dueYM = dueList.length ? dueList[0] : null;
+  if(!ctCycleYM || ctCycleYM < firstCycle) ctCycleYM = dueYM ? ctCycleStart(dueYM, ac.startMonth, cycleLen) : currentCycle;
   const cy = ctCycle(ctAc, ctCycleYM, ctx);
   const lastYM = ctAddMonths(ctCycleYM, cycleLen - 1);
   const isCurrent = ctCycleYM === currentCycle;
   const chips = regs.map(r => `<button type="button" class="chip ${r===ctAc?'on':''}" data-ac="${r}">${r}</button>`).join('');
 
-  // The invoice you are due to prepare: the oldest finished month with no hours entered yet.
-  let dueYM = null;
-  for(let y = firstCycle; y < todayYM; y = ctAddMonths(y, 1)){
-    if(!(ownerData.months || {})[ctAc + '|' + y]){ dueYM = y; break; }
-  }
-  const dueHtml = dueYM
-    ? `<div class="ct-due"><div><b>Prepare the ${ctMonthName(dueYM)} invoice</b><br><span class="ct-dim">${ctMonthName(dueYM)}'s hours and flying days &middot; dated ${ctInvoiceDate(dueYM)}</span></div><button type="button" class="primary" id="ctDueBtn">Open ${new Date(dueYM + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'})}</button></div>`
-    : `<div class="ct-due ok"><div><b>Invoices up to date</b><br><span class="ct-dim">${ctMonthName(todayYM)}'s hours can be entered from the 1st of ${new Date(ctAddMonths(todayYM, 1) + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'})}.</span></div></div>`;
+  const monLong = (ym) => new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'});
+  const monShort = (ym) => new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'short', timeZone: 'UTC'});
+  const dueHtml = dueList.length === 1
+    ? `<div class="ct-due"><div><b>Prepare the ${ctMonthName(dueYM)} invoice</b><br><span class="ct-dim">${ctMonthName(dueYM)}'s hours and flying days &middot; dated ${ctInvoiceDate(dueYM)}</span></div><div class="ct-duebtns"><button type="button" class="primary ct-duebtn" data-month="${dueYM}">Open ${monLong(dueYM)}</button></div></div>`
+    : dueList.length > 1
+    ? `<div class="ct-due"><div><b>Hours to enter: ${dueList.map(monShort).join(', ')}</b><br><span class="ct-dim">Work through them in order &mdash; each month carries its credit or deficit into the next.</span></div><div class="ct-duebtns">${dueList.slice(0, 8).map(y => `<button type="button" class="primary ct-duebtn" data-month="${y}">${monShort(y)}</button>`).join('')}</div></div>`
+    : `<div class="ct-due ok"><div><b>Invoices up to date</b><br><span class="ct-dim">${ctMonthName(todayYM)}'s hours can be entered from the 1st of ${monLong(ctAddMonths(todayYM, 1))}.</span></div></div>`;
 
   const allCycles = ctAllCycles(ctAc, ctx, firstCycle, currentCycle, cycleLen);
   const timelineHtml = allCycles.map((c, i) => `<div class="ct-group g${i % 2}${c.startYM === ctCycleYM ? ' sel' : ''}" data-cycle="${c.startYM}" role="button" tabindex="0" aria-label="Show cycle ${ctShortRange(c.startYM, cycleLen)}">
@@ -1430,7 +1438,7 @@ function renderContract(){
       <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)} hours<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')} &middot; invoices dated ${cy.months.map(x => ctInvoiceDate(x.ym, true)).join(', ')}</span></b>
       <button type="button" id="ctNext" aria-label="Next cycle">&#9654;</button></div>
     <div class="ct-block">
-      <div class="ct-bhead"><b>${ctShortRange(ctCycleYM, cycleLen)} cycle</b><span class="ct-chip">${cy.state === 'final' ? 'finished' : (isCurrent ? 'current' : (ctCycleYM > currentCycle ? 'upcoming' : 'in progress'))}</span></div>
+      <div class="ct-bhead"><b>${ctShortRange(ctCycleYM, cycleLen)} cycle</b><span class="ct-chip${cy.state !== 'final' && cy.months.every(m => m.status === 'closed' || m.status === 'na') ? ' warn' : ''}">${cy.state === 'final' ? 'finished' : (cy.months.every(m => m.status === 'closed' || m.status === 'na') ? 'hours needed' : (isCurrent ? 'current' : (ctCycleYM > currentCycle ? 'upcoming' : 'in progress')))}</span></div>
       <div class="ct-bnote">Credit and deficit carry forward inside this block, then reset for the next cycle.</div>
       ${cy.months.map(m => ctMonthCardHtml(m, s)).join('')}
       ${result}
@@ -1442,8 +1450,9 @@ function renderContract(){
   document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -cycleLen); renderContract(); });
   document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, cycleLen); renderContract(); });
   document.getElementById('ctLockBtn').addEventListener('click', ownerLock);
-  const dueBtn = document.getElementById('ctDueBtn');
-  if(dueBtn) dueBtn.addEventListener('click', () => { ctCycleYM = ctCycleStart(dueYM, ac.startMonth, cycleLen); renderContract(); openMonthSheet(dueYM); });
+  holder.querySelectorAll('.ct-duebtn').forEach(b => b.addEventListener('click', () => {
+    const ym = b.dataset.month; ctCycleYM = ctCycleStart(ym, ac.startMonth, cycleLen); renderContract(); openMonthSheet(ym);
+  }));
   // timeline: a pill opens that month, the group label opens that cycle; history rows open a cycle
   holder.querySelectorAll('#ctTimeline .ct-group').forEach(g => {
     const showCycle = () => { ctCycleYM = g.dataset.cycle; renderContract(); };
