@@ -1,150 +1,103 @@
-# FASX Flyability Dashboard — hosted setup
+# FASX Flyability Dashboard
 
-Everything in this folder, once pushed to a GitHub repo, gives you:
+Live site: https://juniorjoseph1981.github.io/FASX-Weather/
 
-- **A live dashboard** at a public URL (works from your phone, no PC needed) —
-  `index.html`, served by GitHub Pages.
-- **Automated logging** every ~30 minutes, running on GitHub's servers —
-  `.github/workflows/forecast-log.yml` + `scripts/log_forecast.py`, writing to
-  `data/forecast_log.csv`. It pulls **actual wind/temp/dew point from the
-  on-site iWeathar station** (1945, Swellengrebel Airfield) when the station
-  is online, and always pulls forecast data (visibility, ceiling estimate,
-  precipitation) from Open-Meteo alongside it — the station doesn't measure
-  visibility or cloud base, so those stay model-derived either way.
-- **Manual checks that save themselves permanently** — `cloudflare-worker/worker.js`
-  is a small server-side function that writes each "Log a check" entry
-  straight into `data/manual_log.csv` in this repo, the moment you hit save.
-  The GitHub token it needs lives only on Cloudflare, never in the page you
-  or anyone else can view the source of.
+A single-page dashboard for Hendrik Swellengrebel Airfield (FASX, Swellendam): a
+FLYABLE / CAUTION / NO-FLY verdict from the on-site iWeathar station and the Open-Meteo
+forecast, a 7-day planner, history calendar, fleet status, and a **private Contract tab**
+for the aircraft utilisation addenda (owner only, behind a password).
 
-Webcam checks stay manual (see the "Field webcam" link in the dashboard) —
-FASX's own site explicitly disclaims the timestamp/heading on those photos
-for aviation use, so there's no reliable way to automate that one usefully.
+## How it fits together
 
-## Setup (10 minutes, one-time)
+| Part | Where | What it does |
+|---|---|---|
+| Website | `index.html` | Everything the browser shows. No build step. |
+| Publishing | `.github/workflows/deploy-pages.yml` | A push to `main` that changes `index.html` redeploys GitHub Pages. |
+| Worker | `cloudflare-worker/worker.js` | Server side: logs the weather every 30 min, saves manual checks, grounds/releases aircraft, and stores the **private contract data**. |
+| Worker deploy | `.github/workflows/deploy-worker.yml` + `cloudflare-worker/wrangler.toml` | Publishes the Worker to Cloudflare from GitHub. |
+| Public data | `data/*.csv` | `forecast_log.csv` (every 30 min), `manual_log.csv`, `aircraft_status.csv`. **Public** — anyone can read them. |
+| Private data | Cloudflare KV (`fasx-contract`) | Contract settings, invoiced hours, day overrides. Never in the repo. |
+| Tests | `tests/` | `npm test` — Worker endpoints and the contract maths. |
 
-1. **Create a new repo** on GitHub — e.g. `fasx-weather`. Public or private
-   both work; Pages is free either way on a personal account.
+`scripts/log_forecast.py` is a legacy GitHub-Actions logger that is no longer used (the Worker
+does this now).
 
-2. **Upload these files**, keeping the folder structure exactly as-is:
-   ```
-   index.html
-   data/forecast_log.csv
-   scripts/log_forecast.py
-   .github/workflows/forecast-log.yml
-   ```
-   Easiest way: on the repo's GitHub page, use "Add file → Upload files" and
-   drag the whole folder in, or use `git` locally if you're comfortable with it.
+## Working on it (phone friendly)
 
-3. **Turn on write permission for Actions** (needed so the workflow can commit
-   the updated log back to the repo):
-   Repo → Settings → Actions → General → "Workflow permissions" →
-   select **Read and write permissions** → Save.
+1. Changes are made on a branch and opened as a pull request.
+2. Merging the PR into `main` publishes the website (about a minute).
+3. To undo a change, use **Revert** on the merged PR.
 
-4. **Add the iWeathar key as a secret** (keeps it out of the code entirely):
-   Repo → Settings → Secrets and variables → Actions → "New repository secret" →
-   Name: `IWEATHAR_KEY`, Value: the key Russell gave you → Add secret.
-   If this is skipped, the automation still runs fine on forecast data alone —
-   it just won't have the actual station readings.
+## The Contract tab (owner only)
 
-5. **Turn on GitHub Pages**:
-   Repo → Settings → Pages → under "Build and deployment", set
-   Source = **Deploy from a branch**, Branch = **main**, folder = **/ (root)** → Save.
-   GitHub will give you a URL like `https://<your-username>.github.io/fasx-weather/`
-   within a minute or two — that's your permanent dashboard link.
+Open **Info → Owner login** and enter the same password used to ground/release aircraft. Without
+it the tab does not exist, and the figures are not in the page or the repo — the server checks
+the password on every request (and locks an IP out for 15 minutes after 6 wrong attempts).
 
-6. **Kick off the first log entry manually** (don't wait for the schedule):
-   Repo → Actions tab → "FASX forecast log" workflow → "Run workflow" button →
-   Run workflow. After it finishes (~20 seconds), `data/forecast_log.csv` will
-   have its first real row — check the "VerdictSource" column says `station`
-   to confirm the key worked.
+What it calculates, per aircraft, following the signed addenda:
 
-7. **Wire the dashboard to your log** — open `index.html` in the repo (use
-   GitHub's "Edit" pencil icon), find this line near the top of the `<script>`:
-   ```js
-   const HISTORY_CSV_URL = "";
-   ```
-   and set it to your repo's raw file URL:
-   ```js
-   const HISTORY_CSV_URL = "https://raw.githubusercontent.com/<your-username>/fasx-weather/main/data/forecast_log.csv";
-   ```
-   Commit that change. Reload your Pages URL — you'll now see an "Automated
-   forecast & station history" table on the dashboard, populated every ~30 minutes
-   from then on, with a "source" column showing whether each row used the
-   actual station or fell back to forecast (e.g. if the station was briefly
-   offline).
+- **Adjusted monthly baseline** = `guaranteed hours × available days ÷ days in month`, rounded
+  **down** to 0.1 h (40 h today). Every calendar day counts (Sundays and holidays included).
+- **Unavailable days** = maintenance days (from the Fleet grounding log) + non-flying weather days
+  (decided automatically from this dashboard's own logged weather) + any days you add; a day
+  that is both counts once. You can override any single day.
+- **Cycles run invoice to invoice** (3 invoices by default): surplus hours are credit, shortfalls
+  roll forward as deficit, and any deficit left at the end of the cycle is billed. Credit does not
+  carry into the next cycle.
+- You type in each month's **invoiced hours** (and any owner-flying hours to exclude); the page
+  shows the surplus/shortfall, the running balance and the cycle-end deficit with a Rand estimate.
 
-## Making manual checks save themselves (Cloudflare Worker)
+**Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts fresh on
+**1 November 2026** (cycles Nov–Jan, Feb–Apr, May–Jul, Aug–Oct) and nothing before that is counted.
+A new aircraft gets its own start month (the first invoice month), so its cycles run from its own
+first invoice and never roll from a mid-month date.
 
-This part makes the "Log a check" form in the dashboard write directly into
-your GitHub repo the instant you hit save — no download/paste needed, and it
-works even if you close the tab immediately after.
+Everything adjustable lives under **Contract → Settings**, no code change needed:
+per aircraft — start month, cycle length, guaranteed hours, whether it is tracked, and the **hourly
+rate (R1,800 ex VAT today)**; when prices rise, add a **price change** with the date it applies from
+(a cycle is estimated at the rate in force on its last day, so old cycles never change). Also the
+tacho multiplier and VAT for the estimate, the weather-day rule, and the release-day rule.
+**Download backup** saves everything as JSON.
 
-1. **Create a fine-grained GitHub token, scoped to just this repo:**
-   GitHub → your profile photo → Settings → Developer settings →
-   Personal access tokens → Fine-grained tokens → Generate new token.
-   - Resource owner: you
-   - Repository access: **Only select repositories** → pick this repo
-   - Permissions → Repository permissions → **Contents: Read and write**
-     (leave everything else as "No access")
-   - Generate, and copy the token somewhere safe — GitHub only shows it once.
+The weather-day rule is an *estimate from this dashboard's data* and is kept separate from
+Heritage's booking system. The contract only recognises weather days where booked flights were
+cancelled and reported, so treat the figures as a working calculation, not a legal ruling.
 
-2. **Create a free Cloudflare account** at cloudflare.com if you don't have
-   one (email + password, no card needed for this).
+## Cloudflare Worker: one-time setup
 
-3. **Create the Worker:**
-   Cloudflare dashboard → Workers & Pages → Create → **Create Worker** →
-   give it a name (e.g. `fasx-log`) → Deploy (with the default placeholder
-   code, you'll replace it next) → **Edit code**.
-   Delete everything in the editor and paste in the contents of
-   `cloudflare-worker/worker.js` from this folder → **Deploy**.
+The Worker needs these (Cloudflare dashboard → Worker `fasx-log` → Settings → Variables and Secrets):
 
-4. **Set the Worker's variables and secret:**
-   Worker page → Settings → Variables and Secrets → Add:
-   - `GITHUB_OWNER` (variable) → your GitHub username
-   - `GITHUB_REPO` (variable) → your repo name, e.g. `fasx-weather`
-   - `GITHUB_BRANCH` (variable) → `main`
-   - `GITHUB_PATH` (variable) → `data/manual_log.csv`
-   - `ALLOWED_ORIGIN` (variable) → your Pages URL, e.g.
-     `https://<your-username>.github.io` (use `*` temporarily while testing
-     if you hit CORS issues, then tighten it once it's working)
-   - `GITHUB_TOKEN` (**secret** — use the "Encrypt" / secret option, not a
-     plain variable) → paste the token from step 1
-   Save/Deploy after adding these.
+| Name | Type | Notes |
+|---|---|---|
+| `GITHUB_TOKEN` | secret | Fine-grained PAT, this repo only, Contents: Read and write |
+| `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` | vars | `JuniorJoseph1981`, `FASX-Weather`, `main` |
+| `GITHUB_PATH`, `GITHUB_PATH_FORECAST` | vars | `data/manual_log.csv`, `data/forecast_log.csv` |
+| `GITHUB_PATH_AIRCRAFT` | var (optional) | defaults to `data/aircraft_status.csv` |
+| `ALLOWED_ORIGIN` | var | `https://juniorjoseph1981.github.io` |
+| `IWEATHAR_KEY` | secret | key supplied by the club |
+| `AIRCRAFT_PASSWORD` | secret | already set — the same password now also unlocks the Contract tab (`OWNER_PASSWORD` works as an alternative name) |
+| `FASX_KV` | KV binding | created and bound automatically by the deploy workflow |
 
-5. **Copy the Worker's URL** — shown at the top of the Worker's page, looks
-   like `https://fasx-log.<your-cloudflare-subdomain>.workers.dev`.
+**Deploying from GitHub:** add two repository **secrets** (Settings → Secrets and variables → Actions → *Secrets*):
+`CLOUDFLARE_API_TOKEN` (a custom token with *Account → Workers Scripts: Edit* and *Account → Workers KV Storage: Edit*)
+and `CLOUDFLARE_ACCOUNT_ID`. No repository *variables* are needed. Then run **Actions → Deploy Cloudflare Worker → Run workflow**. It runs the
+tests, creates the KV namespace if needed, deploys, and checks `/health`. Dashboard variables and
+secrets are kept. Once a manual deploy has been verified, enable automatic deploys by un-commenting
+the `push:` trigger in `deploy-worker.yml`.
 
-6. **Wire it into the dashboard** — open `index.html` in the repo, find:
-   ```js
-   const WORKER_URL = "";
-   const MANUAL_LOG_CSV_URL = "";
-   ```
-   and set both:
-   ```js
-   const WORKER_URL = "https://fasx-log.<your-cloudflare-subdomain>.workers.dev";
-   const MANUAL_LOG_CSV_URL = "https://raw.githubusercontent.com/<your-username>/fasx-weather/main/data/manual_log.csv";
-   ```
-   Commit. Reload the dashboard, log a test check, and confirm you don't get
-   the "GitHub sync failed" alert. Check the repo — `data/manual_log.csv`
-   should appear with your entry in it within a few seconds.
+`GET <worker-url>/health` reports whether storage and the owner password are configured (booleans
+only, no secrets).
 
-## Notes
+## Tests
 
-- GitHub's free `schedule` cron is best-effort — entries land roughly every
-  30 minutes but can occasionally slip by 5–10 minutes during busy periods.
-  That's fine for a conditions trend log; it's not meant to replace the
-  on-demand "refresh" button for anything time-critical. If your repo is
-  private, this uses about 1,440 of your 2,000 free monthly Actions minutes —
-  public repos have no such limit.
-- Your manually logged checks (the "Log a check" form) sync straight to
-  `data/manual_log.csv` once `WORKER_URL` is set — they no longer depend on
-  the browser or Claude's storage to survive. If `WORKER_URL` is left blank,
-  it falls back to Claude's own session storage as before.
-- The GitHub token used by the Worker is scoped to **only this repo, only
-  Contents: Read and write** — worst case if it ever leaked is someone
-  writing junk rows into your two CSV files, nothing more. It's never sent
-  to or visible from the dashboard page itself.
-- To change the check schedule or VFR thresholds, edit the `CRIT` object near
-  the top of `index.html`'s script (dashboard) and `scripts/log_forecast.py`
-  (automated log) — keep both in sync if you adjust limits.
+```bash
+npm test
+```
+
+Covers the Worker (login, lockout, validation, storage, ground/release CSV handling) and the contract
+engine (baseline rounding, cycle credit/deficit, the contract's worked example, weather-day rules).
+
+## Thresholds
+
+The VFR limits are the `CRIT` object near the top of the script in `index.html` and in
+`cloudflare-worker/worker.js` — keep the two in sync.

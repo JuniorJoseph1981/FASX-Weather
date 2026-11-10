@@ -1,0 +1,15 @@
+# Deployed by .github/workflows/deploy-worker.yml (the workflow fills in the KV id).
+# Dashboard-defined variables and secrets are kept (keep_vars) — only code, the cron
+# schedule and the KV binding are managed from this repo.
+name = "fasx-log"
+main = "worker.js"
+compatibility_date = "2025-11-01"
+workers_dev = true
+keep_vars = true
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[kv_namespaces]]
+binding = "FASX_KV"
+id = "__KV_NAMESPACE_ID__"
