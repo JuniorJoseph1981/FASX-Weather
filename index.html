@@ -395,6 +395,8 @@
   .ct-pill.open{border-style:dashed; color:var(--text);} .ct-pill.fut,.ct-pill.na{opacity:.6;}
   .ct-hrow{width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; text-align:left; border-radius:10px; font-size:13px;}
   .ct-hrow.sel{border-color:var(--cyan);}
+  .ct-due{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 14px; margin-bottom:10px; border-radius:12px; background:var(--amber-dim); border:1px solid var(--amber-line);}
+  .ct-due.ok{background:var(--green-dim); border-color:var(--green-line);}
 </style>
 <script>
 (function(){
@@ -1234,6 +1236,12 @@ function ctIssueMonth(ym, short){
   const mon = new Date(n + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: short ? 'short' : 'long', timeZone: 'UTC'});
   return (short || n.slice(0, 4) === ym.slice(0, 4)) ? mon : mon + ' ' + n.slice(0, 4);
 }
+// The invoice for a month's hours is dated the LAST DAY of that month and prepared the month after
+// (October hours -> invoice dated 31 October, prepared in November).
+function ctInvoiceDate(ym, short){
+  const mon = new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: short ? 'short' : 'long', timeZone: 'UTC'});
+  return ctDim(ym) + ' ' + mon;
+}
 function ctFmt(x){ return (Math.round(x*10)/10).toFixed(1); }
 function ctMonthName(ym){ return new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month:'long', year:'numeric', timeZone:'UTC'}); }
 function ctRand(x){ return 'R' + Math.round(x).toLocaleString('en-ZA').replace(/ /g, ' '); }
@@ -1291,7 +1299,7 @@ function ctBuildCtx(){
 
 function ctMonthCardHtml(m, s){
   const name = ctMonthName(m.ym) + ' hours';
-  const issued = `<div class="ct-dim" style="margin-top:2px">Invoice issued in ${ctIssueMonth(m.ym)}</div>`;
+  const issued = `<div class="ct-dim" style="margin-top:2px">Invoice dated ${ctInvoiceDate(m.ym)} &middot; prepared in ${ctIssueMonth(m.ym)}</div>`;
   if(m.status === 'na'){
     return `<div class="card ct-card na"><div class="mrow"><b>${name}</b><span class="ct-chip">not in effect</span></div>
       <div class="ct-math">Tracking for ${m.reg} starts with ${ctMonthName(s.aircraft[m.reg].startMonth)} hours.</div></div>`;
@@ -1313,14 +1321,14 @@ function ctMonthCardHtml(m, s){
       <div class="res"><span>Counted <b class="mono">${ctFmt(m.counted)} h</b>${m.invoice.ownerHours ? ` <span class="ct-dim">(${ctFmt(m.invoice.invoicedHours)} invoiced &minus; ${ctFmt(m.invoice.ownerHours)} owner flying)</span>` : ''}</span>
       <span>running ${m.balanceAfter >= 0 ? 'credit' : 'deficit'} <b class="mono">${ctFmt(Math.abs(m.balanceAfter))} h</b></span></div>`;
   } else if(m.status === 'closed'){
-    right = `<span class="ct-chip warn">awaiting invoice</span>`;
+    right = `<span class="ct-chip warn">enter hours</span>`;
   } else if(m.status === 'open'){
     right = `<span class="ct-chip">in progress &middot; provisional</span>`;
   } else {
     right = `<span class="ct-chip">upcoming</span>`;
   }
   return `<div class="card ct-card${cls}" data-month="${m.ym}" role="button" tabindex="0"><div class="mrow"><b>${name}</b>${right}</div>${issued}
-    <div class="ct-math">${baseLine}</div>${bar}<div class="ct-tap">Tap to ${m.counted === null ? 'enter the invoice' : 'edit'} &rsaquo;</div></div>`;
+    <div class="ct-math">${baseLine}</div>${bar}<div class="ct-tap">Tap to ${m.counted === null ? 'prepare this invoice' : 'edit'} &rsaquo;</div></div>`;
 }
 
 // Every cycle from the aircraft's first tracked month up to the current one, plus the next (for planning).
@@ -1363,6 +1371,15 @@ function renderContract(){
   const isCurrent = ctCycleYM === currentCycle;
   const chips = regs.map(r => `<button type="button" class="chip ${r===ctAc?'on':''}" data-ac="${r}">${r}</button>`).join('');
 
+  // The invoice you are due to prepare: the oldest finished month with no hours entered yet.
+  let dueYM = null;
+  for(let y = firstCycle; y < todayYM; y = ctAddMonths(y, 1)){
+    if(!(ownerData.months || {})[ctAc + '|' + y]){ dueYM = y; break; }
+  }
+  const dueHtml = dueYM
+    ? `<div class="ct-due"><div><b>Prepare the ${ctMonthName(dueYM)} invoice</b><br><span class="ct-dim">${ctMonthName(dueYM)}'s hours and flying days &middot; dated ${ctInvoiceDate(dueYM)}</span></div><button type="button" class="primary" id="ctDueBtn">Open ${new Date(dueYM + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'})}</button></div>`
+    : `<div class="ct-due ok"><div><b>Invoices up to date</b><br><span class="ct-dim">${ctMonthName(todayYM)}'s hours can be entered from the 1st of ${new Date(ctAddMonths(todayYM, 1) + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'})}.</span></div></div>`;
+
   const allCycles = ctAllCycles(ctAc, ctx, firstCycle, currentCycle, cycleLen);
   const timelineHtml = allCycles.map((c, i) => `<div class="ct-group g${i % 2}${c.startYM === ctCycleYM ? ' sel' : ''}" data-cycle="${c.startYM}" role="button" tabindex="0" aria-label="Show cycle ${ctShortRange(c.startYM, cycleLen)}">
       <div class="ct-glabel">${ctShortRange(c.startYM, cycleLen)}${c.startYM === currentCycle ? ' &middot; now' : ''}</div>
@@ -1392,7 +1409,7 @@ function renderContract(){
     result = cy.deficit > 0
       ? `<div class="card ct-result bad"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--red)">${ctFmt(cy.deficit)} h</span>
           <span class="mono">&asymp; ${ctRand(cy.rand.exVat)} + VAT</span></div>
-          <div class="ct-dim">${ctRand(cy.rand.inclVat)} incl. ${s.billing.vatPercent}% VAT &middot; estimate: ${ctFmt(cy.deficit)} h at R${cy.perHour.toLocaleString('en-ZA')}/h${s.billing.multiplier !== 1 ? ' &times; ' + s.billing.multiplier : ''} &mdash; check against the contract. Falls due with the invoice issued in ${ctIssueMonth(lastYM)}.</div></div>`
+          <div class="ct-dim">${ctRand(cy.rand.inclVat)} incl. ${s.billing.vatPercent}% VAT &middot; estimate: ${ctFmt(cy.deficit)} h at R${cy.perHour.toLocaleString('en-ZA')}/h${s.billing.multiplier !== 1 ? ' &times; ' + s.billing.multiplier : ''} &mdash; check against the contract. Add it to the invoice dated ${ctInvoiceDate(lastYM)} (prepared in ${ctIssueMonth(lastYM)}).</div></div>`
       : `<div class="card ct-result ok"><div class="ct-rl">CYCLE-END BILLING</div><div class="mrow"><span class="big mono" style="color:var(--green)">None</span></div>
           <div class="ct-dim">No deficit at the end of the cycle${cy.credit > 0 ? ` (${ctFmt(cy.credit)} h surplus does not carry into the next cycle)` : ''}.</div></div>`;
   } else {
@@ -1400,16 +1417,17 @@ function renderContract(){
     result = `<div class="card ct-result"><div class="ct-rl">CYCLE POSITION &middot; PROVISIONAL</div>
       <div class="mrow"><span class="big mono" style="color:var(${cy.balance >= 0 ? '--green' : '--red'})">${have ? (cy.balance >= 0 ? ctFmt(cy.credit) + ' h credit' : ctFmt(cy.deficit) + ' h deficit') : 'no invoices yet'}</span>
       ${cy.deficit > 0 ? `<span class="mono ct-dim">&asymp; ${ctRand(cy.rand.exVat)} + VAT*</span>` : ''}</div>
-      <div class="ct-dim">Final once every month has ended and its invoice is entered. ${cy.deficit > 0 ? '*If the cycle ended with today\'s figures.' : ''}</div></div>`;
+      <div class="ct-dim">Final once every month has ended and its hours are entered. ${cy.deficit > 0 ? '*If the cycle ended with today\'s figures.' : ''}</div></div>`;
   }
 
   holder.innerHTML = `
     <div class="ct-top"><span class="pill ok">&#128275; unlocked</span>
       <span><button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
     <div class="chips">${chips}</div>
+    ${dueHtml}
     <div class="ct-timeline" id="ctTimeline">${timelineHtml}</div>
     <div class="cal-nav"><button type="button" id="ctPrev" aria-label="Previous cycle" ${ctCycleYM <= firstCycle ? 'disabled' : ''}>&#9664;</button>
-      <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)} hours<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')} &middot; invoices issued ${cy.months.map(x => ctIssueMonth(x.ym, true)).join(', ')}</span></b>
+      <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)} hours<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')} &middot; invoices dated ${cy.months.map(x => ctInvoiceDate(x.ym, true)).join(', ')}</span></b>
       <button type="button" id="ctNext" aria-label="Next cycle">&#9654;</button></div>
     <div class="ct-block">
       <div class="ct-bhead"><b>${ctShortRange(ctCycleYM, cycleLen)} cycle</b><span class="ct-chip">${cy.state === 'final' ? 'finished' : (isCurrent ? 'current' : (ctCycleYM > currentCycle ? 'upcoming' : 'in progress'))}</span></div>
@@ -1424,6 +1442,8 @@ function renderContract(){
   document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -cycleLen); renderContract(); });
   document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, cycleLen); renderContract(); });
   document.getElementById('ctLockBtn').addEventListener('click', ownerLock);
+  const dueBtn = document.getElementById('ctDueBtn');
+  if(dueBtn) dueBtn.addEventListener('click', () => { ctCycleYM = ctCycleStart(dueYM, ac.startMonth, cycleLen); renderContract(); openMonthSheet(dueYM); });
   // timeline: a pill opens that month, the group label opens that cycle; history rows open a cycle
   holder.querySelectorAll('#ctTimeline .ct-group').forEach(g => {
     const showCycle = () => { ctCycleYM = g.dataset.cycle; renderContract(); };
@@ -1478,7 +1498,7 @@ function renderMonthSheet(){
   const q = (v) => (v === undefined || v === null) ? '' : v;
   body.innerHTML = `
     <div class="sheet-head"><b>${ctMonthName(ym)} hours &middot; ${ctAc}</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
-    <div class="hint" style="margin:-6px 0 10px">These are the flying days in ${ctMonthName(ym)}. The invoice for them is issued in ${ctIssueMonth(ym)}.</div>
+    <div class="hint" style="margin:-6px 0 10px">These are ${ctMonthName(ym)}'s flying days. The invoice for them is dated ${ctInvoiceDate(ym)} and prepared in ${ctIssueMonth(ym)}.</div>
     <div class="ct-cal">${cells}</div>
     <div class="tl-legend" style="margin-top:8px;">
       <span><i class="lg" style="background:var(--fill-g)"></i>available</span><span><i class="lg" style="background:var(--fill-r)"></i>maintenance</span>
@@ -1494,7 +1514,7 @@ function renderMonthSheet(){
       <div class="kv"><span>Adjusted baseline (${m.baselineHours} &times; ${m.available}/${m.total}, rounded down)</span><b class="mono">${ctFmt(m.baseline)} h</b></div>
     </div>
     <div class="card">
-      <div class="fld"><div><label for="ct_inv">Invoiced hours (${ctMonthName(ym)}, on the ${ctIssueMonth(ym)} invoice)</label><input class="f" id="ct_inv" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.invoicedHours)}"></div>
+      <div class="fld"><div><label for="ct_inv">Invoiced hours (${ctMonthName(ym)}, invoice dated ${ctInvoiceDate(ym)})</label><input class="f" id="ct_inv" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.invoicedHours)}"></div>
         <div><label for="ct_own">Owner-flying hours (excluded)</label><input class="f" id="ct_own" type="number" inputmode="decimal" step="0.1" min="0" value="${q(inv && inv.ownerHours)}"></div></div>
       <label for="ct_note" style="margin-top:8px;">Note (invoice number etc.)</label><input class="f" id="ct_note" type="text" maxlength="300" value="${ctEsc(inv && inv.note || '')}">
       <div id="ct_calc" class="ct-calc"></div>
@@ -1573,7 +1593,7 @@ function openSettingsSheet(){
   body.innerHTML = `
     <div class="sheet-head"><b>Contract settings</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
     <div class="section-title">Aircraft &mdash; each has its own contract clock</div>
-    <div class="hint" style="margin-top:0">Cycles run invoice to invoice from the first month of hours entered here. For example 2026-10 means the invoice issued in November (October hours) starts a cycle: Oct&ndash;Dec hours, then Jan&ndash;Mar, &hellip; A new aircraft just gets its own start month.</div>
+    <div class="hint" style="margin-top:0">Cycles run invoice to invoice from the first month of hours entered here. For example 2026-10 means the invoice dated 31 October (October hours, prepared in November) starts a cycle: Oct&ndash;Dec hours, then Jan&ndash;Mar, &hellip; A new aircraft just gets its own start month.</div>
     <div id="st_aircraft">${Object.keys(s.aircraft).map(reg => ctAircraftBlockHtml(reg, s.aircraft[reg])).join('')}</div>
     <div class="card"><label for="st_newreg">Add an aircraft</label><div style="display:flex; gap:8px;"><input class="f" id="st_newreg" type="text" placeholder="registration, e.g. ZU-ABC" maxlength="10" style="margin-top:0;"><button type="button" id="st_addac">Add</button></div></div>
     <div class="section-title">Billing estimate</div>

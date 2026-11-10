@@ -32,7 +32,7 @@
 //                                  (the existing secret; OWNER_PASSWORD is accepted as an alternative name)
 //   FASX_KV              (KV binding) storage for the private contract data
 
-const WORKER_VERSION = "2026-11-10-owner-contract";
+const WORKER_VERSION = "2026-11-10-auto-deploy";
 const LAT = -34.0482, LON = 20.4746, TZ_OFFSET = "+02:00"; // Africa/Johannesburg, fixed UTC+2, no DST
 const IWEATHAR_STATION_NAME = "Swellengrebel Airfield";
 
@@ -56,7 +56,7 @@ const LOCKOUT_SECONDS = 900;         // ... within this window
 //   baselineHours   guaranteed billed hours per month
 //   rates           hourly price history [{from, perHour}] (ex VAT); the rate in force on the last day
 //                   of a cycle is used for the cycle-end estimate, so a price rise never changes old cycles
-const DEFAULT_START_MONTH = "2026-10";   // October hours = the invoice issued in November, the first tracked invoice
+const DEFAULT_START_MONTH = "2026-10";   // October hours = the invoice dated 31 Oct (prepared in November): the first tracked invoice
 const DEFAULT_SETTINGS = {
   billing: { multiplier: 1, vatPercent: 15 },      // multiplier on deficit hours; 1 because invoiced hours already include the tacho x 1.2
   weatherRule: {

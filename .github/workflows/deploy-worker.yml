@@ -1,13 +1,12 @@
 name: Deploy Cloudflare Worker
 
-# Manual for now. After the first successful run has been checked on the live site, enable
-# automatic deploys by un-commenting the push trigger (every merge that changes the Worker
-# then goes live by itself).
+# Deploys automatically whenever a merge to main changes the Worker (or its tests), and can also be run
+# by hand from the Actions tab. The tests run first, so a broken Worker never goes live.
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  #   paths: ["cloudflare-worker/**", "package.json", "tests/**"]
+  push:
+    branches: [main]
+    paths: ["cloudflare-worker/**", "package.json", "tests/**"]
 
 permissions:
   contents: read
