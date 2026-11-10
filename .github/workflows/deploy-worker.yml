@@ -39,10 +39,15 @@ jobs:
       - name: Verify the Cloudflare token and account ID
         run: |
           set -uo pipefail
-          # A pasted token often picks up a space/line break, or the wrong value gets copied; say which part is wrong.
-          if [ "$CLOUDFLARE_API_TOKEN" != "$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN contains spaces or line breaks. Delete the secret and add it again, pasting only the token."; exit 1
-          fi
+          # Pasted secrets often carry a trailing space or line break. Strip them (masked, never printed)
+          # and use the cleaned values for every later step.
+          token=$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')
+          account=$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')
+          echo "::add-mask::$token"
+          echo "::add-mask::$account"
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_ACCOUNT_ID=$account" >> "$GITHUB_ENV"
+          CLOUDFLARE_API_TOKEN="$token"; CLOUDFLARE_ACCOUNT_ID="$account"
           if ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[0-9a-f]{32}$'; then
             echo "::error::CLOUDFLARE_ACCOUNT_ID should be exactly 32 letters/numbers (found ${#CLOUDFLARE_ACCOUNT_ID} characters). Copy 'Account ID' from Workers & Pages."; exit 1
           fi
