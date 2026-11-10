@@ -75,12 +75,12 @@ The Worker needs these (Cloudflare dashboard → Worker `fasx-log` → Settings 
 | `GITHUB_PATH_AIRCRAFT` | var (optional) | defaults to `data/aircraft_status.csv` |
 | `ALLOWED_ORIGIN` | var | `https://juniorjoseph1981.github.io` |
 | `IWEATHAR_KEY` | secret | key supplied by the club |
-| `OWNER_PASSWORD` | secret | password for grounding **and** the Contract tab (`AIRCRAFT_PASSWORD` also works) |
+| `AIRCRAFT_PASSWORD` | secret | already set — the same password now also unlocks the Contract tab (`OWNER_PASSWORD` works as an alternative name) |
 | `FASX_KV` | KV binding | created and bound automatically by the deploy workflow |
 
-**Deploying from GitHub:** add two repository secrets (Settings → Secrets and variables → Actions):
-`CLOUDFLARE_API_TOKEN` (permissions: *Workers Scripts: Edit* and *Workers KV Storage: Edit*) and
-`CLOUDFLARE_ACCOUNT_ID`. Then run **Actions → Deploy Cloudflare Worker → Run workflow**. It runs the
+**Deploying from GitHub:** add two repository **secrets** (Settings → Secrets and variables → Actions → *Secrets*):
+`CLOUDFLARE_API_TOKEN` (a custom token with *Account → Workers Scripts: Edit* and *Account → Workers KV Storage: Edit*)
+and `CLOUDFLARE_ACCOUNT_ID`. No repository *variables* are needed. Then run **Actions → Deploy Cloudflare Worker → Run workflow**. It runs the
 tests, creates the KV namespace if needed, deploys, and checks `/health`. Dashboard variables and
 secrets are kept. Once a manual deploy has been verified, enable automatic deploys by un-commenting
 the `push:` trigger in `deploy-worker.yml`.

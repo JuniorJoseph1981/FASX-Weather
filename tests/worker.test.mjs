@@ -31,7 +31,7 @@ function installGithub(files) {
 }
 
 const baseEnv = () => ({
-  OWNER_PASSWORD: "s3cret", FASX_KV: new MockKV(), ALLOWED_ORIGIN: "https://x.github.io",
+  AIRCRAFT_PASSWORD: "s3cret", FASX_KV: new MockKV(), ALLOWED_ORIGIN: "https://x.github.io",
   GITHUB_OWNER: "o", GITHUB_REPO: "r", GITHUB_TOKEN: "t",
 });
 const post = (path, body, env, ip = "1.1.1.1") =>
@@ -53,13 +53,15 @@ test("login: right password ok, wrong password 401, missing config 503", async (
   assert.equal((await owner("/owner/login", {}, env)).status, 200);
   assert.equal((await post("/owner/login", { password: "nope" }, env)).status, 401);
   assert.equal((await post("/owner/login", {}, env)).status, 401);
-  const noPw = { ...baseEnv(), OWNER_PASSWORD: undefined };
+  const noPw = { ...baseEnv(), AIRCRAFT_PASSWORD: undefined };
   assert.equal((await post("/owner/login", { password: "" }, noPw)).status, 503);   // fails closed
 });
 
-test("AIRCRAFT_PASSWORD is accepted as the fallback secret name", async () => {
-  const env = { ...baseEnv(), OWNER_PASSWORD: undefined, AIRCRAFT_PASSWORD: "old" };
-  assert.equal((await post("/owner/login", { password: "old" }, env)).status, 200);
+test("the existing AIRCRAFT_PASSWORD secret is the one used; OWNER_PASSWORD works as an alternative name", async () => {
+  const env = { ...baseEnv(), AIRCRAFT_PASSWORD: "old", OWNER_PASSWORD: "new" };
+  assert.equal((await post("/owner/login", { password: "old" }, env)).status, 200);     // existing secret wins
+  const alt = { ...baseEnv(), AIRCRAFT_PASSWORD: undefined, OWNER_PASSWORD: "new" };
+  assert.equal((await post("/owner/login", { password: "new" }, alt)).status, 200);
 });
 
 test("lockout after repeated wrong passwords, per IP, and success resets", async () => {
@@ -214,5 +216,48 @@ test("legacy manual check POST still appends to the manual log", async () => {
     assert.ok(t.startsWith("Date,Time,Observer"));
     assert.ok(t.includes("2026-11-10,08:00,J,10,5,8,20,,None,no,,no,"));
     assert.equal((await post("/", { dateStr: "2026-11-10" }, baseEnv())).status, 400);
+  } finally { restore(); }
+});
+
+// ---- regression guards for behaviour the live Worker already has ----
+const STATION_XML = `<DATA><ITEM><LOCATION>Swellengrebel Airfield</LOCATION><STATUS>ON-LINE</STATUS><WIND_AVG>10</WIND_AVG><WIND_MAX>20</WIND_MAX>
+<WIND_DIR>NW</WIND_DIR><RAIN_RATE_MM_HR>0</RAIN_RATE_MM_HR><RAINFALL_MM>0</RAINFALL_MM><TEMPERATURE_C>14</TEMPERATURE_C><DEWPOINT_C>13</DEWPOINT_C>
+<PRESSURE_MB>1018.4</PRESSURE_MB><ASL_FEET>407</ASL_FEET><CLOUD_HEIGHT_M>300</CLOUD_HEIGHT_M><LASTUPDATE>2026-11-10 07:00:00</LASTUPDATE></ITEM></DATA>`;
+const FORECAST = { hourly: { time: ["2026-11-10T07:00", "2026-11-10T08:00"], wind_direction_10m: [200, 210], wind_speed_10m: [5, 6], wind_gusts_10m: [9, 10],
+  visibility: [40000, 40000], precipitation: [0, 0], cloud_cover: [50, 50], temperature_2m: [14, 15], dew_point_2m: [13, 13] } };
+function installWeather(files) {
+  const restoreGh = installGithub(files);
+  const gh = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    if (String(url).includes("iweathar.co.za")) return new Response(STATION_XML);
+    if (String(url).includes("open-meteo.com")) return Response.json(FORECAST);
+    return gh(url, opts);
+  };
+  return restoreGh;
+}
+
+test("live-station keeps serving qnhHpa and aslFt (the dashboard's QNH tile reads them)", async () => {
+  const restore = installWeather(new Map());
+  try {
+    const res = await worker.fetch(new Request("https://w.example/live-station"), { ...baseEnv(), IWEATHAR_KEY: "k" });
+    const j = await res.json();
+    assert.equal(j.status, "ON-LINE"); assert.equal(j.qnhHpa, 1018.4); assert.equal(j.aslFt, 407);
+    assert.equal(j.windGustKt, 10.8); assert.equal(j.stationCeilingFt, 577);
+  } finally { restore(); }
+});
+
+test("the scheduled weather log stamps rows with the actual current SAST minute", async () => {
+  const files = new Map(); const restore = installWeather(files);
+  try {
+    const logs = []; const realLog = console.log; console.log = (...a) => logs.push(a.join(" "));
+    let done; const p = new Promise((r) => { done = r; });
+    await worker.scheduled({}, { ...baseEnv(), IWEATHAR_KEY: "k" }, { waitUntil: (pr) => pr.then(done) });
+    await p; console.log = realLog;
+    const text = files.get("data/forecast_log.csv").text.trimEnd().split("\n");
+    const first = text[1].split(",")[0];
+    assert.match(first, /^\d{4}-\d\d-\d\dT\d\d:\d\d$/);
+    const sast = new Date(Date.now() + 2 * 3600000).toISOString().slice(0, 16);
+    assert.ok(Math.abs(Date.parse(first + "Z") - Date.parse(sast + "Z")) <= 120000, "not the current time: " + first);
+    assert.equal(text[1].split(",").slice(-2)[1], "station");
   } finally { restore(); }
 });

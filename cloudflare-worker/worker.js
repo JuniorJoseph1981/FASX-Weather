@@ -28,8 +28,8 @@
 //   GITHUB_PATH_AIRCRAFT (var)     optional, default "data/aircraft_status.csv"
 //   ALLOWED_ORIGIN       (var)     your GitHub Pages origin, e.g. https://yourname.github.io
 //   IWEATHAR_KEY         (secret)  the key Russell provided
-//   OWNER_PASSWORD       (secret)  the password for grounding aircraft AND the Contract tab
-//                                  (AIRCRAFT_PASSWORD is accepted as a fallback name)
+//   AIRCRAFT_PASSWORD    (secret)  the password for grounding aircraft AND the Contract tab
+//                                  (the existing secret; OWNER_PASSWORD is accepted as an alternative name)
 //   FASX_KV              (KV binding) storage for the private contract data
 
 const WORKER_VERSION = "2026-11-10-owner-contract";
@@ -153,7 +153,7 @@ async function handleManualLog(request, env, corsHeaders) {
 // ---------------------------------------------------------------- owner (password) routes
 
 function getOwnerPassword(env) {
-  return env.OWNER_PASSWORD || env.AIRCRAFT_PASSWORD || "";
+  return env.AIRCRAFT_PASSWORD || env.OWNER_PASSWORD || "";
 }
 
 async function sha256(str) {
@@ -278,7 +278,7 @@ async function handleAircraft(isGround, body, env, corsHeaders) {
   if (!isIsoDate(date)) return json({ error: "Invalid date" }, 400, corsHeaders);
 
   const path = env.GITHUB_PATH_AIRCRAFT || "data/aircraft_status.csv";
-  const loggedAt = new Date(Date.now() + 2 * 3600 * 1000).toISOString().slice(0, 16);   // local (UTC+2) minute
+  const loggedAt = nowSastString();
   let conflict = null;
 
   try {
@@ -463,7 +463,7 @@ async function runAutomatedLog(env) {
     }
 
     const row = [
-      times[bestIdx],
+      nowSastString(),
       fcWindDir, fcWindSpeed, fcGust, fcVisKm,
       fcCeiling === null ? "" : fcCeiling, fcPrecip,
       round1(fcTemp), round1(fcDew), fcCloud,
@@ -485,8 +485,9 @@ async function runAutomatedLog(env) {
     const header = "LocalTime,Fc_WindDir,Fc_WindSpeed_kt,Fc_Gust_kt,Fc_Visibility_km,Fc_CeilingEst_ft,Fc_Precip,Fc_Temp_C,Fc_Dew_C,Fc_Cloud_pct,St_Status,St_WindDir,St_WindAvg_kt,St_WindGust_kt,St_Temp_C,St_Dew_C,St_Pressure_hPa,St_RainToday_mm,St_RainRate_mm_hr,St_CeilingEst_ft,St_Precip,St_Time,Verdict,VerdictSource\n";
 
     const path = env.GITHUB_PATH_FORECAST || "data/forecast_log.csv";
-    await appendToGithubCsv(env, path, header, row, `Log forecast ${times[bestIdx]} (${verdictSource})`);
-    console.log(`Logged ${times[bestIdx]}: ${verdict} (source: ${verdictSource})`);
+    const localTime = nowSastString();
+    await appendToGithubCsv(env, path, header, row, `Log forecast ${localTime} (${verdictSource})`);
+    console.log(`Logged ${localTime}: ${verdict} (source: ${verdictSource})`);
   } catch (e) {
     console.log(`Scheduled run failed: ${e.message} ${e.detail || ""}`);
   }
@@ -562,6 +563,10 @@ async function fetchIweatharStation(key) {
       stationCeilingFt = Math.round((cloudHeightM / 0.3048) - aslFt);
     }
 
+    // iWeathar's PRESSURE_MB is already sea-level-corrected (station software convention), so it is
+    // used directly as QNH -- no additional barometric reduction, which would double-correct it.
+    const qnhHpa = pressureHpa;
+
     return {
       status,
       windAvgKt: round1(kmhToKt(windAvgKmh)),
@@ -572,6 +577,8 @@ async function fetchIweatharStation(key) {
       tempC,
       dewpointC,
       pressureHpa,
+      aslFt,
+      qnhHpa,
       stationCeilingFt,
       stationTime,
     };
@@ -582,6 +589,12 @@ async function fetchIweatharStation(key) {
 }
 
 function round1(v) { return Math.round(v * 10) / 10; }
+
+// Actual current time as Africa/Johannesburg wall-clock (fixed UTC+2, no DST), to the minute. Used for
+// log rows so two 30-minute-apart entries within the same hour never collapse into one label.
+function nowSastString() {
+  return new Date(Date.now() + 2 * 3600000).toISOString().slice(0, 16);
+}
 
 function precipCategory(mmPerHr) {
   if (mmPerHr >= 7.6) return "Heavy";
