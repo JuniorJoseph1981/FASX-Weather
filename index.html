@@ -371,6 +371,30 @@
   .ct-addrate{margin-top:2px;}
   .fld{display:flex; gap:10px;} .fld > div{flex:1; min-width:0;}
   input.f{width:100%; min-width:0; padding:10px; font-size:15px; margin-top:4px;}
+
+  /* contract: grouped cycle block + timeline */
+  :root{ --blk-bg:#0E1A24; --blk-line:#245A78; --grp-a:#12202C; --grp-b:#1A1D2B; }
+  :root[data-theme="light"]{ --blk-bg:#E7F2F8; --blk-line:#8FC3DA; --grp-a:#E7F2F8; --grp-b:#EEEAF6; }
+  .ct-block{background:var(--blk-bg); border:1px solid var(--blk-line); border-left:5px solid var(--cyan); border-radius:16px; padding:12px; margin-bottom:12px;}
+  .ct-block .card{background:var(--panel); margin-bottom:10px;}
+  .ct-block .ct-result{margin-bottom:0;}
+  .ct-bhead{display:flex; justify-content:space-between; align-items:center; margin:0 2px 2px;}
+  .ct-bnote{font-size:11px; color:var(--dim); margin:0 2px 10px;}
+  .ct-timeline{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; margin-bottom:6px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;}
+  .ct-group{flex:0 0 auto; border-radius:12px; padding:8px 8px 8px; border:1px solid transparent; cursor:pointer; scroll-snap-align:center;}
+  .ct-group.g0{background:var(--grp-a);} .ct-group.g1{background:var(--grp-b);}
+  .ct-group.sel{border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan) inset;}
+  .ct-glabel{font-size:11px; color:var(--sub); margin:0 2px 6px; white-space:nowrap;}
+  .ct-pills{display:flex; gap:4px;}
+  .ct-pill{min-width:46px; min-height:40px; padding:4px 6px; border-radius:9px; font-size:12px; font-weight:700; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15;
+    background:var(--panel); color:var(--sub); border:1px solid var(--line);}
+  .ct-pill small{font-size:11px; height:12px;}
+  .ct-pill.pos{background:var(--green-dim); color:var(--green); border-color:var(--green-line);}
+  .ct-pill.neg{background:var(--red-dim); color:var(--red); border-color:var(--red-line);}
+  .ct-pill.wait{background:var(--amber-dim); color:var(--amber); border-color:var(--amber-line);}
+  .ct-pill.open{border-style:dashed; color:var(--text);} .ct-pill.fut,.ct-pill.na{opacity:.6;}
+  .ct-hrow{width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; text-align:left; border-radius:10px; font-size:13px;}
+  .ct-hrow.sel{border-color:var(--cyan);}
 </style>
 <script>
 (function(){
@@ -1299,6 +1323,27 @@ function ctMonthCardHtml(m, s){
     <div class="ct-math">${baseLine}</div>${bar}<div class="ct-tap">Tap to ${m.counted === null ? 'enter the invoice' : 'edit'} &rsaquo;</div></div>`;
 }
 
+// Every cycle from the aircraft's first tracked month up to the current one, plus the next (for planning).
+function ctAllCycles(reg, ctx, firstCycle, currentCycle, len){
+  const out = [];
+  const last = ctAddMonths(currentCycle, len);
+  for(let y = firstCycle; y <= last; y = ctAddMonths(y, len)) out.push(ctCycle(reg, y, ctx));
+  return out;
+}
+function ctPillClass(m){
+  if(m.status === 'na') return 'na';
+  if(m.counted !== null) return m.diff >= 0 ? 'pos' : 'neg';
+  if(m.status === 'closed') return 'wait';
+  if(m.status === 'open') return 'open';
+  return 'fut';
+}
+function ctPillGlyph(c){ return {pos:'\u2713', neg:'\u2715', wait:'!', open:'\u2026', fut:'', na:''}[c]; }
+function ctShortRange(startYM, len){
+  const a = ctAddMonths(startYM, 0), b = ctAddMonths(startYM, len - 1);
+  const mon = (ym) => new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'short', timeZone: 'UTC'});
+  return mon(a) + '\u2013' + mon(b) + ' ' + b.slice(0, 4);
+}
+
 function renderContract(){
   const holder = document.getElementById('contractHolder');
   if(!holder || !ownerData) return;
@@ -1317,6 +1362,30 @@ function renderContract(){
   const lastYM = ctAddMonths(ctCycleYM, cycleLen - 1);
   const isCurrent = ctCycleYM === currentCycle;
   const chips = regs.map(r => `<button type="button" class="chip ${r===ctAc?'on':''}" data-ac="${r}">${r}</button>`).join('');
+
+  const allCycles = ctAllCycles(ctAc, ctx, firstCycle, currentCycle, cycleLen);
+  const timelineHtml = allCycles.map((c, i) => `<div class="ct-group g${i % 2}${c.startYM === ctCycleYM ? ' sel' : ''}" data-cycle="${c.startYM}" role="button" tabindex="0" aria-label="Show cycle ${ctShortRange(c.startYM, cycleLen)}">
+      <div class="ct-glabel">${ctShortRange(c.startYM, cycleLen)}${c.startYM === currentCycle ? ' &middot; now' : ''}</div>
+      <div class="ct-pills">${c.months.map(m => { const pc = ctPillClass(m); return `<button type="button" class="ct-pill ${pc}" data-month="${m.ym}" aria-label="${ctMonthName(m.ym)} hours">${new Date(m.ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'short', timeZone: 'UTC'})}<small>${ctPillGlyph(pc)}</small></button>`; }).join('')}</div>
+    </div>`).join('');
+
+  const pastCycles = allCycles.filter(c => c.startYM <= currentCycle).reverse();
+  const billedFinal = pastCycles.filter(c => c.state === 'final');
+  const billedHours = ctRound2(billedFinal.reduce((a, c) => a + c.deficit, 0));
+  const billedRand = ctRound2(billedFinal.reduce((a, c) => a + c.rand.exVat, 0));
+  const historyHtml = `<div class="section" style="margin-top:14px;">
+      <div class="section-title"><span>Cycle history</span><span style="text-transform:none; letter-spacing:0;">tap a cycle to open it</span></div>
+      ${pastCycles.map(c => {
+        const bal = c.balance, st = c.state === 'final' ? 'final' : (c.months.some(m => m.counted !== null) ? 'in progress' : 'no invoices yet');
+        const result = c.months.every(m => m.counted === null) ? '\u2014' : (bal >= 0 ? ctFmt(c.credit) + ' h credit' : ctFmt(c.deficit) + ' h deficit');
+        return `<button type="button" class="ct-hrow${c.startYM === ctCycleYM ? ' sel' : ''}" data-cycle="${c.startYM}"><span><b>${ctShortRange(c.startYM, cycleLen)}</b><br><span class="ct-dim">${st}</span></span>
+          <span class="mono" style="color:var(${c.months.every(m => m.counted === null) ? '--dim' : (bal >= 0 ? '--green' : '--red')})">${result}</span></button>`;
+      }).join('')}
+      <div class="kv"><span>Deficit billed so far (${billedFinal.length} finished cycle${billedFinal.length === 1 ? '' : 's'})</span><b class="mono">${ctFmt(billedHours)} h${billedRand > 0 ? ' &asymp; ' + ctRand(billedRand) : ''}</b></div>
+      <div class="field" style="margin-top:10px;"><label for="ctJump">Go to any month</label>
+        <div style="display:flex; gap:8px;"><input class="f" id="ctJump" type="month" min="${firstCycle}" style="margin-top:0;"><button type="button" id="ctJumpBtn">Open</button></div></div>
+      <div id="ctJumpMsg" class="hint"></div>
+    </div>`;
 
   let result;
   if(cy.state === 'final'){
@@ -1338,17 +1407,42 @@ function renderContract(){
     <div class="ct-top"><span class="pill ok">&#128275; unlocked</span>
       <span><button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
     <div class="chips">${chips}</div>
+    <div class="ct-timeline" id="ctTimeline">${timelineHtml}</div>
     <div class="cal-nav"><button type="button" id="ctPrev" aria-label="Previous cycle" ${ctCycleYM <= firstCycle ? 'disabled' : ''}>&#9664;</button>
       <b style="text-align:center">${ctMonthName(ctCycleYM)} &ndash; ${ctMonthName(lastYM)} hours<br><span class="ct-dim" style="font-weight:400;font-size:11px">${isCurrent ? 'current cycle' : (ctCycleYM < currentCycle ? 'past cycle' : 'future cycle')} &middot; invoices issued ${cy.months.map(x => ctIssueMonth(x.ym, true)).join(', ')}</span></b>
       <button type="button" id="ctNext" aria-label="Next cycle">&#9654;</button></div>
-    ${cy.months.map(m => ctMonthCardHtml(m, s)).join('')}
-    ${result}
+    <div class="ct-block">
+      <div class="ct-bhead"><b>${ctShortRange(ctCycleYM, cycleLen)} cycle</b><span class="ct-chip">${cy.state === 'final' ? 'finished' : (isCurrent ? 'current' : (ctCycleYM > currentCycle ? 'upcoming' : 'in progress'))}</span></div>
+      <div class="ct-bnote">Credit and deficit carry forward inside this block, then reset for the next cycle.</div>
+      ${cy.months.map(m => ctMonthCardHtml(m, s)).join('')}
+      ${result}
+    </div>
+    ${historyHtml}
     <div class="hint">Every calendar day counts. Maintenance days come from the Fleet log; weather days from this dashboard's own logged checks (${s.weatherRule.windowStart}&ndash;${s.weatherRule.windowEnd}, fewer than ${s.weatherRule.minFlyableHours} flyable hours). Tap a month to add or release individual days.</div>`;
 
   holder.querySelectorAll('.chip[data-ac]').forEach(b => b.addEventListener('click', () => { ctAc = b.dataset.ac; ctCycleYM = null; renderContract(); }));
   document.getElementById('ctPrev').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, -cycleLen); renderContract(); });
   document.getElementById('ctNext').addEventListener('click', () => { ctCycleYM = ctAddMonths(ctCycleYM, cycleLen); renderContract(); });
   document.getElementById('ctLockBtn').addEventListener('click', ownerLock);
+  // timeline: a pill opens that month, the group label opens that cycle; history rows open a cycle
+  holder.querySelectorAll('#ctTimeline .ct-group').forEach(g => {
+    const showCycle = () => { ctCycleYM = g.dataset.cycle; renderContract(); };
+    g.addEventListener('click', (e) => {
+      const pill = e.target.closest ? e.target.closest('.ct-pill') : null;
+      if(pill){ ctCycleYM = g.dataset.cycle; renderContract(); openMonthSheet(pill.dataset.month); }
+      else showCycle();
+    });
+    g.addEventListener('keydown', (e) => { if(e.key === 'Enter' && e.target === g){ e.preventDefault(); showCycle(); } });
+  });
+  holder.querySelectorAll('.ct-hrow').forEach(r => r.addEventListener('click', () => { ctCycleYM = r.dataset.cycle; renderContract(); window.scrollTo(0, 0); }));
+  document.getElementById('ctJumpBtn').addEventListener('click', () => {
+    const v = document.getElementById('ctJump').value, msg = document.getElementById('ctJumpMsg');
+    if(!/^\d{4}-\d{2}$/.test(v)){ msg.textContent = 'Pick a month first.'; return; }
+    if(v < firstCycle){ msg.textContent = 'Tracking for ' + ctAc + ' starts with ' + ctMonthName(firstCycle) + ' hours.'; return; }
+    ctCycleYM = ctCycleStart(v, ac.startMonth, cycleLen); renderContract(); openMonthSheet(v);
+  });
+  const selGroup = holder.querySelector('#ctTimeline .ct-group.sel'), tl = document.getElementById('ctTimeline');
+  if(selGroup && tl) tl.scrollLeft = Math.max(0, selGroup.offsetLeft - (tl.clientWidth - selGroup.offsetWidth) / 2);
   document.getElementById('ctSettingsBtn').addEventListener('click', openSettingsSheet);
   holder.querySelectorAll('.ct-card[data-month]').forEach(c => {
     const open = () => openMonthSheet(c.dataset.month);

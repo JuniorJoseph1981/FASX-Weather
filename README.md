@@ -69,6 +69,17 @@ The weather-day rule is an *estimate from this dashboard's data* and is kept sep
 Heritage's booking system. The contract only recognises weather days where booked flights were
 cancelled and reported, so treat the figures as a working calculation, not a legal ruling.
 
+## How much history can it hold?
+
+- **Contract data (private, in Cloudflare KV):** a month's record is about 0.2 KB, a day override about 0.03 KB.
+  Decades of history for several aircraft is well under 1 MB; the limit per stored value is 25 MB. In practice
+  there is no limit to worry about.
+- **Weather log (`data/forecast_log.csv`, public):** about 6.4 KB a day (~2.3 MB a year). GitHub only lets the
+  Worker read files up to 1 MB the normal way, so the Worker falls back to GitHub's raw read for bigger files
+  (supported up to 100 MB, i.e. decades). The practical limit is the page: it downloads the whole log on every
+  visit, so it is comfortable for roughly the first 2-3 years. After that, splitting the log into one file per
+  month is the next step.
+
 ## Cloudflare Worker: one-time setup
 
 The Worker needs these (Cloudflare dashboard → Worker `fasx-log` → Settings → Variables and Secrets):
