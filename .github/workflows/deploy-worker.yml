@@ -36,6 +36,40 @@ jobs:
             exit 1
           fi
 
+      - name: Verify the Cloudflare token and account ID
+        run: |
+          set -uo pipefail
+          # Pasted secrets often carry a trailing space or line break. Strip them (masked, never printed)
+          # and use the cleaned values for every later step.
+          token=$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')
+          account=$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')
+          echo "::add-mask::$token"
+          echo "::add-mask::$account"
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_ACCOUNT_ID=$account" >> "$GITHUB_ENV"
+          CLOUDFLARE_API_TOKEN="$token"; CLOUDFLARE_ACCOUNT_ID="$account"
+          if ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[0-9a-f]{32}$'; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID should be exactly 32 letters/numbers (found ${#CLOUDFLARE_ACCOUNT_ID} characters). Copy 'Account ID' from Workers & Pages."; exit 1
+          fi
+          echo "token length: ${#CLOUDFLARE_API_TOKEN} characters"
+          # Cloudflare tokens are letters, numbers, - and _ (older ones 40 characters, newer ones with a cfut_/cfat_
+          # prefix are longer). A pasted curl command or sentence contains other characters / is much longer.
+          if ! printf '%s' "$CLOUDFLARE_API_TOKEN" | grep -Eq '^[A-Za-z0-9_-]{30,80}$'; then
+            echo "::error::CLOUDFLARE_API_TOKEN does not look like a Cloudflare token (found ${#CLOUDFLARE_API_TOKEN} characters). Common mistakes: copying the token NAME, a curl command, or the word 'Bearer'. Roll the token in Cloudflare, copy only the new value, and update the secret."; exit 1
+          fi
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          user=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" https://api.cloudflare.com/client/v4/user/tokens/verify)
+          acct=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify")
+          echo "token check: user-token endpoint=$user, account-token endpoint=$acct"
+          if [ "$user" != "200" ] && [ "$acct" != "200" ]; then
+            echo "::error::Cloudflare does not accept CLOUDFLARE_API_TOKEN (it is invalid, expired, or was copied incompletely). Create a new token and re-add the secret."; exit 1
+          fi
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces?per_page=1")
+          if [ "$code" != "200" ]; then
+            echo "::error::Token is valid but cannot list Workers KV for this account (HTTP $code). Check CLOUDFLARE_ACCOUNT_ID is the right account and the token has Account > Workers KV Storage > Edit."; exit 1
+          fi
+          echo "Cloudflare credentials OK"
+
       - name: Run tests
         run: npm test
 
