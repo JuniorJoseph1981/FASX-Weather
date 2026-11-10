@@ -83,9 +83,9 @@ test("state returns defaults on an empty store", async () => {
   const j = await (await owner("/owner/state", {}, baseEnv())).json();
   const a = j.data.settings.aircraft;
   assert.deepEqual(Object.keys(a).sort(), ["ZS-ESE", "ZS-JOG"]);
-  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start fresh on 1 Nov 2026, R1,800/h, 40 h, 3-month cycles
-    assert.equal(a[reg].startMonth, "2026-11"); assert.equal(a[reg].cycleMonths, 3);
-    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-11-01", perHour: 1800 }]);
+  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start with October 2026 hours (the November invoice), R1,800/h, 40 h, 3-month cycles
+    assert.equal(a[reg].startMonth, "2026-10"); assert.equal(a[reg].cycleMonths, 3);
+    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-10-01", perHour: 1800 }]);
   }
   assert.deepEqual(j.data.months, {});
 });
@@ -128,7 +128,7 @@ test("settings: valid changes applied, junk ignored, previous version kept", asy
     evil: "<script>",
   } }, env)).json();
   const s = j.data.settings;
-  assert.equal(s.billing.multiplier, 1.2);                   // invalid -> kept
+  assert.equal(s.billing.multiplier, 1);                     // invalid -> kept (default 1: invoiced hours already include tacho x 1.2)
   assert.equal(s.billing.vatPercent, 15.5);
   assert.equal(s.weatherRule.minFlyableHours, 5);
   assert.equal(s.weatherRule.windowStart, "07:00");          // inverted window rejected
@@ -137,7 +137,7 @@ test("settings: valid changes applied, junk ignored, previous version kept", asy
   const ese = s.aircraft["ZS-ESE"];
   assert.equal(ese.startMonth, "2027-02"); assert.equal(ese.baselineHours, 42); assert.equal(ese.cycleMonths, 4);
   assert.deepEqual(ese.rates, [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-02-01", perHour: 1900 }]);   // sorted, junk dropped
-  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-11");  // invalid month -> kept
+  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-10");  // invalid month -> kept
   assert.equal(s.aircraft["ZS-JOG"].cycleMonths, 3);         // out of range -> kept
   const nu = s.aircraft["ZU-FZS"];                           // a new aircraft gets its own clock and a default rate
   assert.equal(nu.startMonth, "2026-12"); assert.deepEqual(nu.rates, [{ from: "2026-12-01", perHour: 1800 }]);

@@ -47,16 +47,22 @@ What it calculates, per aircraft, following the signed addenda:
 - You type in each month's **invoiced hours** (and any owner-flying hours to exclude); the page
   shows the surplus/shortfall, the running balance and the cycle-end deficit with a Rand estimate.
 
-**Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts fresh on
-**1 November 2026** (cycles Nov–Jan, Feb–Apr, May–Jul, Aug–Oct) and nothing before that is counted.
-A new aircraft gets its own start month (the first invoice month), so its cycles run from its own
-first invoice and never roll from a mid-month date.
+**Hours are labelled by the month they were flown, not the month they are invoiced.** The invoice
+issued in November carries **October's hours**, so you enter it against October (and use October's
+flyable/unavailable days); November's hours arrive on the December invoice. The Contract tab shows
+"October 2026 hours — invoice issued in November" on every card.
+
+**Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts with the
+**October 2026 hours** — the invoice issued in **November 2026** — so the first cycle is Oct–Dec hours
+(invoices issued Nov, Dec, Jan), then Jan–Mar, Apr–Jun, … Nothing before October is counted.
+A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
+from a mid-month date.
 
 Everything adjustable lives under **Contract → Settings**, no code change needed:
-per aircraft — start month, cycle length, guaranteed hours, whether it is tracked, and the **hourly
+per aircraft — first month of hours tracked, cycle length, guaranteed hours, whether it is tracked, and the **hourly
 rate (R1,800 ex VAT today)**; when prices rise, add a **price change** with the date it applies from
 (a cycle is estimated at the rate in force on its last day, so old cycles never change). Also the
-tacho multiplier and VAT for the estimate, the weather-day rule, and the release-day rule.
+a multiplier on deficit hours (1, because invoiced hours already include the tacho × 1.2) and VAT for the estimate, the weather-day rule, and the release-day rule.
 **Download backup** saves everything as JSON.
 
 The weather-day rule is an *estimate from this dashboard's data* and is kept separate from
