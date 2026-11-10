@@ -36,6 +36,29 @@ jobs:
             exit 1
           fi
 
+      - name: Verify the Cloudflare token and account ID
+        run: |
+          set -uo pipefail
+          # A pasted token often picks up a space/line break, or the wrong value gets copied; say which part is wrong.
+          if [ "$CLOUDFLARE_API_TOKEN" != "$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN contains spaces or line breaks. Delete the secret and add it again, pasting only the token."; exit 1
+          fi
+          if ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[0-9a-f]{32}$'; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID should be exactly 32 letters/numbers (found ${#CLOUDFLARE_ACCOUNT_ID} characters). Copy 'Account ID' from Workers & Pages."; exit 1
+          fi
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          user=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" https://api.cloudflare.com/client/v4/user/tokens/verify)
+          acct=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/tokens/verify")
+          echo "token check: user-token endpoint=$user, account-token endpoint=$acct"
+          if [ "$user" != "200" ] && [ "$acct" != "200" ]; then
+            echo "::error::Cloudflare does not accept CLOUDFLARE_API_TOKEN (it is invalid, expired, or was copied incompletely). Create a new token and re-add the secret."; exit 1
+          fi
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces?per_page=1")
+          if [ "$code" != "200" ]; then
+            echo "::error::Token is valid but cannot list Workers KV for this account (HTTP $code). Check CLOUDFLARE_ACCOUNT_ID is the right account and the token has Account > Workers KV Storage > Edit."; exit 1
+          fi
+          echo "Cloudflare credentials OK"
+
       - name: Run tests
         run: npm test
 
