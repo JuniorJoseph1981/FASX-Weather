@@ -32,7 +32,7 @@
 //                                  (the existing secret; OWNER_PASSWORD is accepted as an alternative name)
 //   FASX_KV              (KV binding) storage for the private contract data
 
-const WORKER_VERSION = "2026-11-10-auto-deploy";
+const WORKER_VERSION = "2026-11-10-aug-start";
 const LAT = -34.0482, LON = 20.4746, TZ_OFFSET = "+02:00"; // Africa/Johannesburg, fixed UTC+2, no DST
 const IWEATHAR_STATION_NAME = "Swellengrebel Airfield";
 
@@ -56,7 +56,7 @@ const LOCKOUT_SECONDS = 900;         // ... within this window
 //   baselineHours   guaranteed billed hours per month
 //   rates           hourly price history [{from, perHour}] (ex VAT); the rate in force on the last day
 //                   of a cycle is used for the cycle-end estimate, so a price rise never changes old cycles
-const DEFAULT_START_MONTH = "2026-10";   // October hours = the invoice dated 31 Oct (prepared in November): the first tracked invoice
+const DEFAULT_START_MONTH = "2026-08";   // the cycle that ends with October hours (invoice dated 31 Oct, prepared in November) started with August hours
 const DEFAULT_SETTINGS = {
   billing: { multiplier: 1, vatPercent: 15 },      // multiplier on deficit hours; 1 because invoiced hours already include the tacho x 1.2
   weatherRule: {
@@ -221,6 +221,7 @@ async function handleOwner(path, request, env, corsHeaders) {
 
   if (path === "/owner/settings") {
     contract.settings = sanitizeSettings(body.settings, contract.settings);
+    contract.settingsSaved = true;
     await saveContract(env, contract);
     return json({ ok: true, data: contract }, 200, corsHeaders);
   }
@@ -390,9 +391,14 @@ function sanitizeSettings(input, base) {
 
 function normalizeContract(raw) {
   const c = raw && typeof raw === "object" ? raw : {};
+  // Stored settings only count once they were saved explicitly from the Settings screen. Before that they are
+  // just a copy of whatever the defaults were when an invoice or day override was saved, so the current
+  // defaults are used instead (this is how a change of default reaches settings nobody has touched).
+  const settingsSaved = c.settingsSaved === true;
   return {
     version: 1,
-    settings: sanitizeSettings(c.settings, DEFAULT_SETTINGS),
+    settingsSaved,
+    settings: sanitizeSettings(settingsSaved ? c.settings : null, DEFAULT_SETTINGS),
     months: c.months && typeof c.months === "object" ? c.months : {},
     overrides: c.overrides && typeof c.overrides === "object" ? c.overrides : {},
     updatedAt: c.updatedAt || null,

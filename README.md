@@ -55,9 +55,12 @@ reads "October 2026 hours — invoice dated 31 October · prepared in November",
 opens the invoice you are due to prepare.
 
 **Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts with the
-**October 2026 hours** (the invoice dated 31 October, prepared in November), so the first cycle is
-Oct–Dec hours (invoices dated 31 Oct, 30 Nov, 31 Dec), then Jan–Mar, Apr–Jun, … Nothing before October
-is counted. A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
+**August 2026 hours**: the cycle that ends now is Aug–Sep–Oct hours (invoices dated 31 Aug, 30 Sep and
+31 Oct; October is prepared in November and is the last month of that cycle). The next cycle is
+Nov–Jan hours (invoices dated 30 Nov, 31 Dec, 31 Jan), then Feb–Apr, … Enter August, September and
+October for each aircraft; the page opens on the cycle that still needs hours and a banner lists the
+months to work through, oldest first (each month carries its credit or deficit into the next).
+A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
 from a mid-month date.
 
 Everything adjustable lives under **Contract → Settings**, no code change needed:

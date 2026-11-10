@@ -93,9 +93,9 @@ test("state returns defaults on an empty store", async () => {
   const j = await (await owner("/owner/state", {}, baseEnv())).json();
   const a = j.data.settings.aircraft;
   assert.deepEqual(Object.keys(a).sort(), ["ZS-ESE", "ZS-JOG"]);
-  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start with October 2026 hours (the November invoice), R1,800/h, 40 h, 3-month cycles
-    assert.equal(a[reg].startMonth, "2026-10"); assert.equal(a[reg].cycleMonths, 3);
-    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-10-01", perHour: 1800 }]);
+  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start with August 2026 hours: Aug-Oct is the cycle that ends now; R1,800/h, 40 h, 3-month cycles
+    assert.equal(a[reg].startMonth, "2026-08"); assert.equal(a[reg].cycleMonths, 3);
+    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-08-01", perHour: 1800 }]);
   }
   assert.deepEqual(j.data.months, {});
 });
@@ -147,7 +147,7 @@ test("settings: valid changes applied, junk ignored, previous version kept", asy
   const ese = s.aircraft["ZS-ESE"];
   assert.equal(ese.startMonth, "2027-02"); assert.equal(ese.baselineHours, 42); assert.equal(ese.cycleMonths, 4);
   assert.deepEqual(ese.rates, [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-02-01", perHour: 1900 }]);   // sorted, junk dropped
-  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-10");  // invalid month -> kept
+  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-08");  // invalid month -> kept
   assert.equal(s.aircraft["ZS-JOG"].cycleMonths, 3);         // out of range -> kept
   const nu = s.aircraft["ZU-FZS"];                           // a new aircraft gets its own clock and a default rate
   assert.equal(nu.startMonth, "2026-12"); assert.deepEqual(nu.rates, [{ from: "2026-12-01", perHour: 1800 }]);
@@ -288,4 +288,22 @@ test("the weather log keeps being written after it passes GitHub's 1 MB read lim
     const added = after.text.slice(big.length);
     assert.match(added, /^\d{4}-\d\d-\d\dT\d\d:\d\d,.*,station\n$/);
   } finally { restore(); }
+});
+
+test("settings never saved explicitly follow the current defaults; explicitly saved ones are kept", async () => {
+  // An invoice saved earlier stored the old defaults (start 2026-10) without anyone choosing them.
+  const env = baseEnv();
+  env.FASX_KV.m.set("contract", JSON.stringify({
+    settings: { aircraft: { "ZS-ESE": { startMonth: "2026-10" }, "ZS-JOG": { startMonth: "2026-10" } } },
+    months: { "ZS-ESE|2026-10": { invoicedHours: 12, ownerHours: 0 } }, overrides: {},
+  }));
+  let j = await (await owner("/owner/state", {}, env)).json();
+  assert.equal(j.data.settings.aircraft["ZS-ESE"].startMonth, "2026-08");              // default applies
+  assert.equal(j.data.months["ZS-ESE|2026-10"].invoicedHours, 12);                     // invoices untouched
+  // Once the owner saves Settings, their choice is theirs.
+  await owner("/owner/settings", { settings: { aircraft: { "ZS-ESE": { startMonth: "2026-11" } } } }, env);
+  j = await (await owner("/owner/state", {}, env)).json();
+  assert.equal(j.data.settings.aircraft["ZS-ESE"].startMonth, "2026-11");
+  assert.equal(j.data.settingsSaved, true);
+  assert.equal(j.data.months["ZS-ESE|2026-10"].invoicedHours, 12);
 });
