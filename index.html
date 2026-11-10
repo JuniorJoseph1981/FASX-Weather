@@ -22,6 +22,20 @@
     --red:#F0554A;
     --red-dim:#432120;
     --cyan:#4FC3D9;
+    --green-line:#1F5A3D; --amber-line:#6B4F1E; --red-line:#6E2A24;
+    --fill-g:#3FD98A; --fill-a:#F0A93C; --fill-r:#F0554A; --on-fill:#08130C;
+    --shadow:0 8px 24px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F5F8; --panel:#FFFFFF; --panel-2:#EDF0F4; --line:#D3DAE3;
+    --text:#16202B; --sub:#435062; --dim:#5F6C7D;
+    --amber:#995A00; --amber-dim:#FCEBCB; --green:#0B7A4B; --green-dim:#D6F1E3;
+    --red:#B8322A; --red-dim:#FBDAD6; --cyan:#0A6F88;
+    --green-line:#7CCBA6; --amber-line:#E2B866; --red-line:#E39A93;
+    --fill-g:#34C47F; --fill-a:#F2B33D; --fill-r:#E86A5F; --on-fill:#0A1A10;
+    --shadow:0 8px 24px rgba(20,32,48,.18);
+    color-scheme:light;
   }
   *{box-sizing:border-box;}
   body{
@@ -29,9 +43,10 @@
     background:var(--bg);
     color:var(--text);
     font-family:'Inter',sans-serif;
-    padding:28px 16px 60px;
+    padding:18px 16px 150px; overflow-x:hidden;
   }
   .wrap{max-width:920px;margin:0 auto;}
+  html{-webkit-text-size-adjust:100%;}
   .mono{font-family:'JetBrains Mono',monospace;}
 
   header{
@@ -75,9 +90,9 @@
   .verdict .label{font-size:11px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:6px;}
   .verdict .status{font-size:34px; font-weight:700; letter-spacing:1px;}
   .verdict .reason{font-size:13px; color:var(--sub); margin-top:6px; max-width:520px;}
-  .verdict.flyable{border-color:#1F5A3D;} .verdict.flyable .status{color:var(--green);}
-  .verdict.caution{border-color:#6B4F1E;} .verdict.caution .status{color:var(--amber);}
-  .verdict.nofly{border-color:#6E2A24;} .verdict.nofly .status{color:var(--red);}
+  .verdict.flyable{border-color:var(--green-line);} .verdict.flyable .status{color:var(--green);}
+  .verdict.caution{border-color:var(--amber-line);} .verdict.caution .status{color:var(--amber);}
+  .verdict.nofly{border-color:var(--red-line);} .verdict.nofly .status{color:var(--red);}
   .verdict-icon{font-size:13px; padding:6px 14px; border-radius:20px; font-weight:600; letter-spacing:0.5px;}
   .flyable .verdict-icon{background:var(--green-dim); color:var(--green);}
   .caution .verdict-icon{background:var(--amber-dim); color:var(--amber);}
@@ -147,10 +162,10 @@
     flex:0 0 auto; width:40px; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer;
   }
   .strip-item .bar{width:16px; height:34px; border-radius:2px; transition:box-shadow 0.15s;}
-  .strip-item.f .bar{background:var(--green);}
-  .strip-item.c .bar{background:var(--amber);}
-  .strip-item.n .bar{background:var(--red);}
-  .strip-item .t{font-size:8px; color:var(--dim); white-space:nowrap;}
+  .strip-item.f .bar{background:var(--fill-g);}
+  .strip-item.c .bar{background:var(--fill-a);}
+  .strip-item.n .bar{background:var(--fill-r);}
+  .strip-item .t{font-size:10px; color:var(--dim); white-space:nowrap;}
   .strip-item.selected .bar{box-shadow:0 0 0 2px var(--text);}
   .strip-detail{
     display:none; margin-top:10px; padding:10px 12px; background:var(--panel-2); border:1px solid var(--line);
@@ -164,10 +179,10 @@
     flex:0 0 auto; min-width:80px; border:1px solid var(--line); border-radius:4px; padding:10px 12px;
     display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; background:var(--panel-2);
   }
-  .sched-item .bar{width:100%; height:24px; border-radius:3px; background:#232C38;}
-  .sched-item.f .bar{background:var(--green);} .sched-item.f .lbl{color:var(--green);}
-  .sched-item.c .bar{background:var(--amber);} .sched-item.c .lbl{color:var(--amber);}
-  .sched-item.n .bar{background:var(--red);} .sched-item.n .lbl{color:var(--red);}
+  .sched-item .bar{width:100%; height:24px; border-radius:3px; background:var(--line);}
+  .sched-item.f .bar{background:var(--fill-g);} .sched-item.f .lbl{color:var(--green);}
+  .sched-item.c .bar{background:var(--fill-a);} .sched-item.c .lbl{color:var(--amber);}
+  .sched-item.n .bar{background:var(--fill-r);} .sched-item.n .lbl{color:var(--red);}
   .sched-item.due .bar{background:transparent; border:1.5px dashed var(--dim);}
   .sched-item.future .bar{background:transparent; border:1px dashed var(--line);}
   .sched-item .t{font-size:12px; font-weight:600;}
@@ -191,7 +206,7 @@
   }
   button{cursor:pointer;}
   button:hover{border-color:var(--dim);}
-  button.primary{background:var(--green-dim); color:var(--green); border-color:#1F5A3D; font-weight:600;}
+  button.primary{background:var(--green-dim); color:var(--green); border-color:var(--green-line); font-weight:600;}
   button.primary:hover{border-color:var(--green);}
   label{font-size:11px; color:var(--sub); display:block; margin-bottom:4px;}
   .field{display:flex; flex-direction:column; gap:2px;}
@@ -204,7 +219,121 @@
   table.logtbl td{padding:6px 8px; border-bottom:1px solid var(--line); color:var(--sub);}
   .badge-f{color:var(--green);} .badge-c{color:var(--amber);} .badge-n{color:var(--red);}
   .storage-note{font-size:11px; color:var(--amber); background:var(--amber-dim); border-radius:4px; padding:8px 12px; margin-bottom:12px;}
+
+  /* ===== header, tabs, sheets ===== */
+  header{margin-bottom:14px; padding-bottom:12px;}
+  .hbtns{display:flex; gap:6px; justify-content:flex-end; align-items:center; margin-top:8px;}
+  .hbtns button{padding:8px 12px; font-size:12px; min-height:36px;}
+  .ident .code{font-size:26px;}
+  @media (max-width:640px){ .meta{display:none;} .ident .name{font-size:12px;} .updated{text-align:left;} .hbtns{justify-content:flex-start;} header{flex-direction:column;} }
+  button, .chip{min-height:36px;}
+  .panel{display:none;}
+  .panel.on{display:block;}
+  .tabbar{position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--panel); border-top:1px solid var(--line);
+    display:flex; justify-content:space-around; padding:6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  .tabbar .tab{flex:1; max-width:140px; background:none; border:0; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:11px; padding:6px 4px; border-radius:10px; min-height:52px;}
+  .tabbar .tab i{font-style:normal; font-size:20px; line-height:1;}
+  .tabbar .tab.on{color:var(--cyan); background:var(--panel-2); font-weight:700;}
+  .fab{position:fixed; right:16px; bottom:calc(76px + env(safe-area-inset-bottom)); z-index:31; background:var(--cyan); color:#04202e;
+    border:0; border-radius:99px; padding:14px 20px; font-size:14px; font-weight:800; box-shadow:var(--shadow);}
+  :root[data-theme="light"] .fab{color:#fff;}
+  .fab:hover{border:0; filter:brightness(1.08);}
+  .sheet-back{position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center;}
+  .sheet-back[hidden]{display:none;}
+  .sheet-body{background:var(--panel); border:1px solid var(--line); border-radius:18px 18px 0 0; width:100%; max-width:680px; max-height:92vh;
+    overflow-y:auto; padding:16px 18px calc(24px + env(safe-area-inset-bottom));}
+  .sheet-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-size:18px;}
+  .sheet-x{min-width:40px; font-size:16px;}
+  body.noscroll{overflow:hidden;}
+  .tblwrap{overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;}
+  .tblwrap table{min-width:520px;}
+  .meta span{display:inline-block;}
+  .form-grid .field{min-width:0;}
+  .form-grid input, .form-grid select{width:100%; min-width:0;}
+  .checkline input[type=text]{min-width:0;}
+
+  /* ===== verdict extras ===== */
+  .verdict{padding:18px 20px;}
+  .verdict .status{display:flex; align-items:center; gap:10px;}
+  .verdict .vg{display:inline-flex; width:34px; height:34px; border-radius:50%; align-items:center; justify-content:center; font-size:19px; border:2px solid currentColor;}
+  .okline{font-size:13px; color:var(--sub); margin-top:6px;}
+  .trend{margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--panel-2); font-size:13px; line-height:1.4; display:flex; gap:10px; align-items:flex-start; max-width:560px;}
+  .trend .ti{font-size:18px; line-height:1.1;}
+  .trend.up{border-left:4px solid var(--fill-g);} .trend.down{border-left:4px solid var(--fill-r);} .trend.flat{border-left:4px solid var(--dim);}
+  .card.bad{border-color:var(--red-line); background:linear-gradient(0deg,var(--red-dim),var(--panel) 70%);}
+  .card.warn{border-color:var(--amber-line);}
+  .card .sub.lim{color:var(--dim); font-size:10.5px;}
+  .card .k{font-size:11px;} .flag{font-size:11px;}
+  .linkrow{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
+  .linkrow a, .linkbtn{font-size:12px; color:var(--cyan); text-decoration:none; border:1px solid var(--line); padding:8px 14px; border-radius:8px; background:var(--panel); min-height:36px; display:inline-flex; align-items:center;}
+  .linkbtn{cursor:pointer;}
+  .section-title .linkbtn{padding:4px 10px; min-height:28px; text-transform:none; letter-spacing:0;}
+  .advisory{font-size:11px; color:var(--dim); margin:4px 2px 14px;}
+  #fleetBanner{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; cursor:pointer;}
+  #fleetBanner:empty{display:none;}
+  .fb{font-size:12px; padding:6px 12px; border-radius:99px; font-weight:600; border:1px solid var(--line);}
+  .fb.ok{background:var(--green-dim); color:var(--green);} .fb.bad{background:var(--red-dim); color:var(--red);}
+
+  /* ===== timeline (plan) ===== */
+  .chips{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; -webkit-overflow-scrolling:touch;}
+  .chip{flex:0 0 auto; padding:7px 14px; border-radius:99px; background:var(--panel); border:1px solid var(--line); font-size:13px; color:var(--sub); cursor:pointer;}
+  .chip.on{background:var(--cyan); color:#04202e; border-color:var(--cyan); font-weight:700;}
+  :root[data-theme="light"] .chip.on{color:#fff;}
+  .chip.small{padding:3px 10px; font-size:11px; min-height:28px;}
+  .win{border:1px solid var(--green-line); background:var(--green-dim); border-radius:12px; padding:14px 16px; margin-bottom:14px;}
+  .win.caution{border-color:var(--amber-line); background:var(--amber-dim);}
+  .win.none{border-color:var(--red-line); background:var(--red-dim);}
+  .win-l{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--sub);}
+  .win-v{font-size:24px; font-weight:800; margin:2px 0;}
+  .win-s{font-size:13px; color:var(--sub);}
+  .tl{display:flex; gap:3px; align-items:flex-end; height:120px; touch-action:pan-y; user-select:none; -webkit-user-select:none;}
+  .tlc{flex:1 1 0; min-width:0; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch; gap:4px;}
+  .tlb{flex:0 0 auto; width:100%; min-height:6px; padding:0; border:0; border-radius:4px 4px 2px 2px; cursor:pointer;}
+  .tlb.f{background:var(--fill-g);} .tlb.c{background:var(--fill-a);} .tlb.n{background:var(--fill-r);}
+  .tlb.night{opacity:.45;}
+  .tlb.isnow{box-shadow:0 0 0 1px var(--text) inset;}
+  .tlb.sel{outline:2px solid var(--text); outline-offset:2px;}
+  .tlb:hover{border:0;}
+  .tlx{height:14px; font-size:10px; color:var(--dim); text-align:center; white-space:nowrap; overflow:visible;}
+  .tl-legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11px; color:var(--sub); margin-top:8px; align-items:center;}
+  .lg{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px;}
+  .lg.f{background:var(--fill-g);} .lg.c{background:var(--fill-a);} .lg.n{background:var(--fill-r);} .lg.x{background:var(--panel-2); border:1px solid var(--line);}
+  .hint{font-size:11px; color:var(--dim); margin-top:8px;}
+  .plan-detail{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:16px;}
+  .pd-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .pd-time{font-size:24px; font-weight:700;} .pd-date{margin-left:10px; color:var(--sub); font-size:13px;}
+  .pd-reason{font-size:13px; color:var(--sub); margin-bottom:10px;}
+  .kv{display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .kv:last-of-type{border-bottom:0;}
+  .kv span{color:var(--sub);} .kv b{text-align:right;}
+
+  /* ===== calendar ===== */
+  .cal-nav{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cal-nav button{min-width:44px;}
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .cal-h{font-size:11px; color:var(--dim); text-align:center; padding-bottom:2px;}
+  .cal-d{aspect-ratio:1; min-height:0; padding:0; border:0; border-radius:8px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--on-fill);}
+  .cal-d.f{background:var(--fill-g);} .cal-d.c{background:var(--fill-a);} .cal-d.n{background:var(--fill-r);}
+  .cal-d.x{background:var(--panel-2); color:var(--dim); border:1px solid var(--line);}
+  .cal-d.p{background:var(--panel-2); color:var(--text); border:1px dashed var(--dim);}
+  .cal-d.fut{color:var(--line); font-weight:500; display:flex;}
+  .cal-d.today{box-shadow:0 0 0 2px var(--cyan);}
+  .cal-d.sel{outline:2px solid var(--text); outline-offset:1px;}
+  .cal-d:hover{border:0;}
+  .cal-d.x:hover,.cal-d.p:hover{border:1px solid var(--dim);}
+  .day-head{font-size:15px; font-weight:700; margin-bottom:8px;}
 </style>
+<script>
+(function(){
+  var t = null;
+  try { t = localStorage.getItem('fasxTheme'); } catch (e) {}
+  if (t !== 'light' && t !== 'dark') {
+    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b8852b8860a04416af6c221315725fb0"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
@@ -225,32 +354,51 @@
     </div>
     <div class="updated">
       <div><span class="dot" id="liveDot"></span><span id="updatedText">loading&hellip;</span></div>
-      <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
-        <a href="https://iweathar.co.za/display?s_id=1945" target="_blank" rel="noopener" id="stationLink">on-site station &#8599;</a>
-        <button id="refreshBtn">refresh</button>
+      <div class="hbtns">
+        <button id="infoBtn" type="button" aria-label="About this data and limits">&#9432; Info</button>
+        <button id="themeBtn" type="button">&#9728; Day</button>
+        <button id="refreshBtn" type="button">&#8635; Refresh</button>
       </div>
     </div>
   </header>
 
-  <div class="section" style="margin-bottom:16px; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-    <div style="font-size:12px; color:var(--sub);">
-      Model numbers below are Open&#8209;Meteo forecast data, not iWeathar. Check the on-site station and webcam directly, then log what they actually show below.
-    </div>
-    <div style="display:flex; gap:8px; flex-shrink:0;">
-      <a href="https://iweathar.co.za/display?s_id=1945" target="_blank" rel="noopener" style="font-size:12px; color:var(--cyan); text-decoration:none; border:1px solid var(--line); padding:8px 14px; border-radius:4px; white-space:nowrap;">Live station reading &#8599;</a>
-      <a href="https://www.fasx.co.za/index.php/en/pilot-resources-en/club-weather-en" target="_blank" rel="noopener" style="font-size:12px; color:var(--sub); text-decoration:none; border:1px solid var(--line); padding:8px 14px; border-radius:4px; white-space:nowrap;">Field webcam &#8599;</a>
-    </div>
-  </div>
+  <main>
+    <section id="tab-now" class="panel on">
+      <div id="app">
+        <div class="loading">Pulling model data for FASX&hellip;</div>
+      </div>
+      <div id="fleetBanner" title="Open fleet status"></div>
+    </section>
 
-  <div id="app">
-    <div class="loading">Pulling model data for FASX&hellip;</div>
-  </div>
+    <section id="tab-plan" class="panel">
+      <div id="planHolder"><div class="loading">Loading forecast&hellip;</div></div>
+    </section>
 
-    <div id="aircraftHolder"></div>
-<div id="autoHistoryHolder"></div>
-  <div id="manualHistoryHolder"></div>
+    <section id="tab-fleet" class="panel">
+      <div id="aircraftHolder"></div>
+    </section>
 
+    <section id="tab-history" class="panel">
+      <div id="calHolder"></div>
+      <div id="pastHolder"></div>
+      <div id="autoHistoryHolder"></div>
+      <div id="manualHistoryHolder"></div>
+      <div id="sessionLogHolder"></div>
+    </section>
+  </main>
 </div>
+
+<button type="button" class="fab" id="fab">&#65291; Log a check</button>
+
+<nav class="tabbar" role="tablist" aria-label="Sections">
+  <button type="button" class="tab on" data-tab="now" role="tab" aria-selected="true"><i aria-hidden="true">&#9673;</i><span>Now</span></button>
+  <button type="button" class="tab" data-tab="plan" role="tab" aria-selected="false"><i aria-hidden="true">&#9636;</i><span>Plan</span></button>
+  <button type="button" class="tab" data-tab="fleet" role="tab" aria-selected="false"><i aria-hidden="true">&#9992;</i><span>Fleet</span></button>
+  <button type="button" class="tab" data-tab="history" role="tab" aria-selected="false"><i aria-hidden="true">&#9776;</i><span>History</span></button>
+</nav>
+
+<div class="sheet-back" id="logSheet" hidden><div class="sheet-body" id="logSheetBody" role="dialog" aria-modal="true" aria-label="Log a check"></div></div>
+<div class="sheet-back" id="infoSheet" hidden><div class="sheet-body" id="infoBody" role="dialog" aria-modal="true" aria-label="About this data"></div></div>
 
 <script>
 const LAT = -34.0482, LON = 20.4746, TZ = "Africa/Johannesburg";
@@ -485,18 +633,18 @@ function windArrowSvg(dirDeg, size){
     const [lx1,ly1] = headingPoint(cx, cy, r*0.62, rwy.hdg);
     const [lx2,ly2] = headingPoint(cx, cy, r*0.62, rwy.hdg+180);
     const [labelA, labelB] = rwy.name.split('/');
-    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#3A4552" stroke-width="1.5"/>
-      <text x="${lx1.toFixed(1)}" y="${ly1.toFixed(1)}" fill="#7A8794" font-size="7" text-anchor="middle" dominant-baseline="middle" font-family="JetBrains Mono">${labelA}</text>
-      <text x="${lx2.toFixed(1)}" y="${ly2.toFixed(1)}" fill="#7A8794" font-size="7" text-anchor="middle" dominant-baseline="middle" font-family="JetBrains Mono">${labelB}</text>`;
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" style="stroke:var(--dim)" stroke-width="1.5"/>
+      <text x="${lx1.toFixed(1)}" y="${ly1.toFixed(1)}" style="fill:var(--sub)" font-size="7" text-anchor="middle" dominant-baseline="middle" font-family="JetBrains Mono">${labelA}</text>
+      <text x="${lx2.toFixed(1)}" y="${ly2.toFixed(1)}" style="fill:var(--sub)" font-size="7" text-anchor="middle" dominant-baseline="middle" font-family="JetBrains Mono">${labelB}</text>`;
   }).join('');
 
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#232C38" stroke-width="1"/>
-    <text x="${cx}" y="10" fill="#586574" font-size="9" text-anchor="middle" font-family="JetBrains Mono">N</text>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" style="stroke:var(--line)" stroke-width="1"/>
+    <text x="${cx}" y="10" style="fill:var(--dim)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">N</text>
     ${rwyLines}
     <g transform="rotate(${rot} ${cx} ${cy})">
-      <line x1="${cx}" y1="${cy-r+4}" x2="${cx}" y2="${cy+r-4}" stroke="#4FC3D9" stroke-width="2"/>
-      <polygon points="${cx-6},${cy-r+14} ${cx+6},${cy-r+14} ${cx},${cy-r+2}" fill="#4FC3D9"/>
+      <line x1="${cx}" y1="${cy-r+4}" x2="${cx}" y2="${cy+r-4}" style="stroke:var(--cyan)" stroke-width="2"/>
+      <polygon points="${cx-6},${cy-r+14} ${cx+6},${cy-r+14} ${cx},${cy-r+2}" style="fill:var(--cyan)"/>
     </g>
   </svg>`;
 }
@@ -511,10 +659,8 @@ function localNow(){
 }
 
 function computeSchedule(sunsetIso){
-  const sunsetDate = new Date(sunsetIso);
-  const sunsetLocal = sunsetDate.toLocaleString("en-US",{timeZone:TZ, hour12:false, hour:'2-digit', minute:'2-digit'});
-  const [sh, sm] = sunsetLocal.split(':').map(Number);
-  const sunsetMin = sh*60+sm;
+  // sunsetIso is already local (Africa/Johannesburg) wall-clock, e.g. "2026-11-10T19:04"
+  const sunsetMin = parseInt(sunsetIso.slice(11,13))*60 + parseInt(sunsetIso.slice(14,16));
   let slots = [480];
   let t = 480;
   while(t+240 <= sunsetMin){ t += 240; slots.push(t); }
@@ -649,108 +795,6 @@ function getAircraftStatus(reg) {
   return { status: 'serviceable' };
 }
 
-function computeMonthAvailability(reg, yearMonth, todayStr) {
-  const dim = daysInMonth(yearMonth);
-  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
-  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
-  const groundingFor = (dayStr) => aircraftRows.find(r => {
-    if (r.Registration !== reg) return false;
-    const start = r.GroundedDate;
-    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
-    if (end === null) return dayStr >= start;
-    return dayStr >= start && dayStr < end;
-  });
-  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
-  const groundedDetail = [], weatherBadDetail = [], noDataDetail = [];
-  for (let d = 1; d <= dim; d++) {
-    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
-    if (dayStr > lastDay) break;
-    daysChecked++;
-    const grounding = groundingFor(dayStr);
-    if (grounding) {
-      groundedDays++;
-      groundedDetail.push(`${dayStr} \u2014 ${grounding.GroundedNote || 'no note'}`);
-      continue;
-    }
-    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
-    if (dayRows.length === 0) { noDataDays++; noDataDetail.push(dayStr); continue; }
-    const flyableHours = dayRows.filter(r => r.Verdict !== 'NO-FLY').length * 0.5;
-    if (flyableHours < 4) {
-      weatherBadDays++;
-      weatherBadDetail.push(`${dayStr} \u2014 ${flyableHours}h flyable`);
-    } else {
-      availableDays++;
-    }
-  }
-  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays, groundedDetail, weatherBadDetail, noDataDetail };
-}function computeMonthAvailability(reg, yearMonth, todayStr) {
-  const dim = daysInMonth(yearMonth);
-  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
-  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
-  const isGroundedOnDay = (dayStr) => aircraftRows.some(r => {
-    if (r.Registration !== reg) return false;
-    const start = r.GroundedDate;
-    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
-    if (end === null) return dayStr >= start;
-    return dayStr >= start && dayStr < end;
-  });
-  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
-  for (let d = 1; d <= dim; d++) {
-    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
-    if (dayStr > lastDay) break;
-    daysChecked++;
-    if (isGroundedOnDay(dayStr)) { groundedDays++; continue; }
-    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
-    if (dayRows.length === 0) { noDataDays++; continue; }
-    const flyableHours = dayRows.filter(r => r.Verdict !== 'NO-FLY').length * 0.5;
-    if (flyableHours < 4) { weatherBadDays++; } else { availableDays++; }
-  }
-  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays };
-}function computeMonthAvailability(reg, yearMonth, todayStr) {
-  const monthStart = `${yearMonth}-01`;
-  const dim = daysInMonth(yearMonth);
-  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
-  const clamp = (d) => d < monthStart ? monthStart : (d > monthEnd ? monthEnd : d);
-  const toDayNum = (d) => Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(monthStart + 'T00:00:00Z')) / 86400000) + 1;
-
-  let groundedDays = 0;
-  const matches = aircraftRows.filter(r => r.Registration === reg);
-  for (const r of matches) {
-    let start = r.GroundedDate;
-    let end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : (todayStr > monthEnd ? monthEnd : todayStr);
-    if (end < monthStart || start > monthEnd) continue;
-    start = clamp(start);
-    end = clamp(end);
-    groundedDays += Math.max(0, toDayNum(end) - toDayNum(start) + 1);
-  }
-  const availableDays = Math.max(0, dim - groundedDays);
-  return { daysInMonth: dim, groundedDays, availableDays };
-}
-
-function computeMonthAvailability(reg, yearMonth, todayStr) {
-  const dim = daysInMonth(yearMonth);
-  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
-  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
-  const isGroundedOnDay = (dayStr) => aircraftRows.some(r => {
-    if (r.Registration !== reg) return false;
-    const start = r.GroundedDate;
-    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
-    if (end === null) return dayStr >= start;
-    return dayStr >= start && dayStr < end;
-  });
-  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
-  for (let d = 1; d <= dim; d++) {
-    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
-    if (dayStr > lastDay) break;
-    daysChecked++;
-    if (isGroundedOnDay(dayStr)) { groundedDays++; continue; }
-    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
-    if (dayRows.length === 0) { noDataDays++; continue; }
-    const flyableHours = dayRows.filter(r => r.Verdict !== 'NO-FLY').length * 0.5;
-    if (flyableHours < 4) { weatherBadDays++; } else { availableDays++; }
-  }
-  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays };
-}
 
 async function loadAircraftRows() {
   if (!AIRCRAFT_STATUS_CSV_URL) return [];
@@ -811,17 +855,17 @@ async function renderAircraftStatus() {
   const monthOptions = AIRCRAFT.map(ac => `<option value="${ac.reg}">${ac.reg}</option>`).join('');
 
   holder.innerHTML = `<div class="section">
-    <div class="section-title">Aircraft Status</div>
-    <div class="grid" style="grid-template-columns:repeat(2,1fr);">${cardsHtml}</div>
+    <div class="section-title">Aircraft status</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">${cardsHtml}</div>
   </div>
   <div class="section">
     <details>
       <summary><span class="section-title"><span>Grounding history &amp; monthly availability</span><span style="text-transform:none; letter-spacing:0;">for month-end flying-day calculations</span></span></summary>
       <div style="margin-top:14px;">
-        <table class="logtbl" style="margin-bottom:16px;">
+        <div class="tblwrap" style="margin-bottom:16px;"><table class="logtbl">
           <thead><tr><th>Aircraft</th><th>Grounded</th><th>Back in service</th><th>Duration</th><th>Reason</th></tr></thead>
           <tbody>${historyRowsHtml || '<tr><td colspan="5" style="text-align:center; padding:16px;">No grounding records yet</td></tr>'}</tbody>
-        </table>
+        </table></div>
         <div style="font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); margin-bottom:8px;">Monthly availability</div>
         <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
           <div class="field"><label>Aircraft</label><select id="avail_reg">${monthOptions}</select></div>
@@ -832,6 +876,15 @@ async function renderAircraftStatus() {
       </div>
     </details>
   </div>`;
+
+  const banner = document.getElementById('fleetBanner');
+  if (banner) {
+    banner.innerHTML = AIRCRAFT.map(ac => {
+      const g = getAircraftStatus(ac.reg).status === 'grounded';
+      return `<span class="fb ${g ? 'bad' : 'ok'}">${g ? '\u2715' : '\u2713'} ${ac.reg}${g ? ' grounded' : ''}</span>`;
+    }).join('');
+    banner.onclick = () => showTab('fleet');
+  }
 
   holder.querySelectorAll('.ac-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -915,6 +968,336 @@ async function renderAircraftStatus() {
     }
 }
 
+// ===== UI state & helpers (tabs, sheets, plan, calendar) =====
+let planDayIdx = 0, planSelIdx = null, planAllDay = false, liveVerdictLevel = null;
+let calMonth = null, calSelDay = null;
+
+function levelGlyph(level){ return level==="flyable"?"✓":(level==="caution"?"▲":"✕"); }
+function levelWord(level){ return level==="flyable"?"Flyable":(level==="caution"?"Caution":"No-fly"); }
+function hhmmToMin(s){ return parseInt(s.slice(0,2))*60 + parseInt(s.slice(3,5)); }
+function minToHHMM(m){ return pad2(Math.floor(m/60)) + ":" + pad2(m%60); }
+
+function hourVerdict(i){
+  const fc = forecastAt(i);
+  const v = verdictFor(fc.gust, fc.ceilingFt, fc.visKm, fc.precip);
+  return {fc, v};
+}
+function dayInfo(dateStr){
+  const d = hourlyCache.daily;
+  const k = d.time.indexOf(dateStr);
+  if(k < 0 || !d.sunrise || !d.sunset) return null;
+  return {
+    sunrise: hhmmToMin(d.sunrise[k].slice(11,16)), sunset: hhmmToMin(d.sunset[k].slice(11,16)),
+    sunriseStr: d.sunrise[k].slice(11,16), sunsetStr: d.sunset[k].slice(11,16)
+  };
+}
+function isDaylightIdx(i){
+  const t = hourlyCache.hourly.time[i];
+  const di = dayInfo(t.slice(0,10));
+  if(!di) return true;
+  const m = parseInt(t.slice(11,13)) * 60;
+  return (m + 60 > di.sunrise && m < di.sunset);
+}
+function hourIdxsForDate(dateStr){
+  const t = hourlyCache.hourly.time, out = [];
+  for(let i=0;i<t.length;i++) if(t[i].startsWith(dateStr)) out.push(i);
+  return out;
+}
+function dayChipLabel(dateStr, k){
+  if(k === 0) return "Today";
+  if(k === 1) return "Tomorrow";
+  return new Date(dateStr + "T12:00:00Z").toLocaleDateString("en-GB", {weekday:"short", day:"numeric", timeZone:"UTC"});
+}
+function whenLabel(i){
+  const t = hourlyCache.hourly.time[i];
+  const today = localNow().dateStr;
+  const hh = t.slice(11,16);
+  if(t.slice(0,10) === today) return "~" + hh;
+  if(t.slice(0,10) === addDaysToDateStr(today, 1)) return "~" + hh + " tomorrow";
+  return "~" + hh + " " + t.slice(5,10);
+}
+
+// "Improving / deteriorating" line for the Now tab, from the hourly model.
+function trendLine(currentLevel){
+  const times = hourlyCache.hourly.time;
+  const rank = {flyable:0, caution:1, nofly:2};
+  const seq = [];
+  for(let i=nowIdxCache+1; i<Math.min(nowIdxCache+25, times.length); i++){
+    if(!isDaylightIdx(i)) continue;
+    seq.push({i, level: hourVerdict(i).v.level});
+  }
+  if(seq.length === 0) return null;
+  if(currentLevel === "flyable"){
+    const worse = seq.find(s => rank[s.level] > 0);
+    if(!worse) return {kind:"flat", text:"Forecast stays flyable through daylight (model)."};
+    return {kind:"down", text:`<b>Deteriorating:</b> ${levelWord(worse.level).toUpperCase()} from ${whenLabel(worse.i)} (model forecast)`};
+  }
+  const better = seq.find(s => rank[s.level] < rank[currentLevel]);
+  if(!better) return {kind:"flat", text:"No improvement forecast during the next daylight hours (model)."};
+  let text = `<b>Improving:</b> ${levelWord(better.level).toUpperCase()} from ${whenLabel(better.i)}`;
+  if(currentLevel === "nofly" && better.level === "caution"){
+    const fly = seq.find(s => s.i > better.i && s.level === "flyable");
+    if(fly) text += `, FLYABLE from ${whenLabel(fly.i)}`;
+  }
+  return {kind:"up", text: text + " (model forecast, may differ from the on-site station)"};
+}
+
+// Longest run of consecutive daylight hours that are flyable (else caution-or-better).
+function bestWindow(dateStr){
+  const today = localNow();
+  const isToday = dateStr === today.dateStr;
+  const nowMin = today.hh*60 + today.mm;
+  const hrs = hourIdxsForDate(dateStr).filter(isDaylightIdx)
+    .filter(i => !isToday || i >= nowIdxCache)
+    .map(i => ({i, level: hourVerdict(i).v.level}));
+  const longest = (pred) => {
+    let best = null, cur = null;
+    for(const h of hrs){
+      if(pred(h.level)){
+        if(cur && h.i === cur.b + 1) cur.b = h.i; else cur = {a:h.i, b:h.i};
+        if(!best || (cur.b - cur.a) > (best.b - best.a)) best = {a:cur.a, b:cur.b};
+      } else cur = null;
+    }
+    return best;
+  };
+  let w = longest(l => l === "flyable"), kind = "flyable";
+  if(!w){ w = longest(l => l !== "nofly"); kind = "caution"; }
+  if(!w) return null;
+  const di = dayInfo(dateStr);
+  const hourStart = (i) => parseInt(hourlyCache.hourly.time[i].slice(11,13)) * 60;
+  let startMin = hourStart(w.a), endMin = hourStart(w.b) + 60;
+  if(di){ startMin = Math.max(startMin, di.sunrise); endMin = Math.min(endMin, di.sunset); }
+  if(isToday && w.a === nowIdxCache) startMin = Math.max(startMin, nowMin);
+  if(endMin <= startMin) return null;
+  let calm = null;
+  for(let i=w.a; i<=w.b; i++){
+    const g = forecastAt(i).gust;
+    if(!calm || g < calm.g) calm = {i, g};
+  }
+  return {kind, startMin, endMin, hours: (endMin - startMin)/60, calm};
+}
+
+function tlBarsHtml(idxs, selIdx){
+  const hFor = {flyable:100, caution:66, nofly:34};
+  const nowHour = hourlyCache.hourly.time[nowIdxCache];
+  return idxs.map(i => {
+    const {fc, v} = hourVerdict(i);
+    const cls = levelClass(v.level);
+    const t = hourlyCache.hourly.time[i];
+    const hh = t.slice(11,13);
+    const night = !isDaylightIdx(i) ? " night" : "";
+    const sel = i === selIdx ? " sel" : "";
+    const nowCls = t === nowHour ? " isnow" : "";
+    const lbl = (parseInt(hh) % 3 === 0) ? hh : "";
+    return `<div class="tlc"><button type="button" class="tlb ${cls}${night}${sel}${nowCls}" data-i="${i}" style="height:${hFor[v.level]}%" aria-label="${hh}:00 ${levelWord(v.level)}, gust ${fc.gust} knots"></button><span class="tlx mono">${lbl}</span></div>`;
+  }).join("");
+}
+
+function planDetailHtml(i){
+  const t = hourlyCache.hourly.time[i];
+  const {fc, v} = hourVerdict(i);
+  const dateStr = t.slice(0,10);
+  const di = dayInfo(dateStr);
+  const xw = crosswind(fc.windDir, fc.gust, 150);
+  const reasonText = v.reasons.length ? v.reasons.join(" · ") : "All parameters within standard VFR minima.";
+  const cls = levelClass(v.level);
+  const flagCls = cls==="f" ? "ok" : (cls==="c" ? "warn" : "bad");
+  const isNow = i === nowIdxCache;
+  return `<div class="plan-detail">
+    <div class="pd-head"><div><span class="pd-time mono">${t.slice(11,16)}</span><span class="pd-date">${isNow ? "now" : dayChipLabel(dateStr, hourlyCache.daily.time.indexOf(dateStr))}</span></div><span class="flag ${flagCls}" style="margin-top:0;">${levelGlyph(v.level)} ${levelWord(v.level).toUpperCase()}</span></div>
+    <div class="pd-reason">${reasonText}</div>
+    <div class="kv"><span>Wind / gust</span><b>${fc.windDir}&deg; ${degToCompass(fc.windDir)} &middot; ${fc.windSpeed} / ${fc.gust} kt</b></div>
+    <div class="kv"><span>Crosswind RWY 15/33 (at gust)</span><b>${xw} kt</b></div>
+    <div class="kv"><span>Cloud base (est.)</span><b>${fc.ceilingFt===null ? "clear / &gt;5000 ft" : fc.ceilingFt + " ft"}</b></div>
+    <div class="kv"><span>Visibility</span><b>${fc.visKm} km</b></div>
+    <div class="kv"><span>Precipitation</span><b>${fc.precip}</b></div>
+    <div class="kv"><span>Temp / dew point</span><b>${fc.temp.toFixed(0)} / ${fc.dew.toFixed(0)} &deg;C</b></div>
+    ${di ? `<div class="kv"><span>Sunrise / sunset</span><b>${di.sunriseStr} / ${di.sunsetStr}</b></div>` : ""}
+    <div class="hint">Open-Meteo model forecast &mdash; always check the station and webcam.</div>
+  </div>`;
+}
+
+function renderPlan(){
+  const holder = document.getElementById('planHolder');
+  if(!holder || !hourlyCache) return;
+  const days = hourlyCache.daily.time;
+  if(planDayIdx >= days.length) planDayIdx = 0;
+  const dateStr = days[planDayIdx];
+  const allIdx = hourIdxsForDate(dateStr);
+  const dayIdx = allIdx.filter(isDaylightIdx);
+  const shown = (planAllDay || dayIdx.length === 0) ? allIdx : dayIdx;
+  if(planSelIdx === null || shown.indexOf(planSelIdx) === -1){
+    if(planDayIdx === 0 && shown.indexOf(nowIdxCache) !== -1) planSelIdx = nowIdxCache;
+    else {
+      const bw = bestWindow(dateStr);
+      planSelIdx = bw ? bw.calm.i : (shown[Math.floor(shown.length/2)] ?? shown[0]);
+      if(shown.indexOf(planSelIdx) === -1) planSelIdx = shown[0];
+    }
+  }
+  const chips = days.map((d,k) => `<button type="button" class="chip ${k===planDayIdx?'on':''}" data-day="${k}">${dayChipLabel(d,k)}</button>`).join("");
+  const bw = bestWindow(dateStr);
+  let winHtml;
+  if(bw){
+    const hrs = Math.round(bw.hours*2)/2;
+    winHtml = `<div class="win ${bw.kind}"><div class="win-l">${bw.kind==='flyable' ? 'Best window' : 'Best available window (caution only)'}</div>
+      <div class="win-v">${minToHHMM(bw.startMin)} &ndash; ${minToHHMM(bw.endMin)}</div>
+      <div class="win-s">${hrs} h ${bw.kind==='flyable' ? 'flyable' : 'with no no-fly hours'} &middot; lightest gusts about ${hourlyCache.hourly.time[bw.calm.i].slice(11,16)} (${bw.calm.g} kt) &middot; model forecast</div>
+      ${(planDayIdx===0 && liveVerdictLevel && liveVerdictLevel!=='flyable') ? `<div class="win-s" style="margin-top:6px;"><b>Right now the live reading is ${levelWord(liveVerdictLevel).toUpperCase()}</b> &mdash; the model may be more optimistic than the station.</div>` : ''}</div>`;
+  } else {
+    winHtml = `<div class="win none"><div class="win-l">${planDayIdx===0 ? 'Rest of today' : 'Best window'}</div><div class="win-v">No flyable window</div><div class="win-s">Every remaining daylight hour is forecast no-fly.</div></div>`;
+  }
+  holder.innerHTML = `
+    <div class="chips" id="planChips">${chips}</div>
+    ${winHtml}
+    <div class="section">
+      <div class="section-title"><span>Hour by hour</span><span style="text-transform:none; letter-spacing:0;"><button type="button" class="chip small ${planAllDay?'':'on'}" id="planDaylight">Daylight</button> <button type="button" class="chip small ${planAllDay?'on':''}" id="plan24">24 h</button></span></div>
+      <div class="tl" id="planTl">${tlBarsHtml(shown, planSelIdx)}</div>
+      <div class="tl-legend"><span><i class="lg f"></i>flyable</span><span><i class="lg c"></i>caution</span><span><i class="lg n"></i>no-fly</span><span class="hint" style="margin:0;">tap or slide across the bars</span></div>
+    </div>
+    <div id="planDetail">${planDetailHtml(planSelIdx)}</div>`;
+
+  holder.querySelectorAll('#planChips .chip').forEach(b => b.addEventListener('click', () => {
+    planDayIdx = parseInt(b.dataset.day); planSelIdx = null; renderPlan();
+  }));
+  document.getElementById('planDaylight').addEventListener('click', () => { planAllDay = false; renderPlan(); });
+  document.getElementById('plan24').addEventListener('click', () => { planAllDay = true; renderPlan(); });
+
+  const tl = document.getElementById('planTl');
+  const select = (i) => {
+    if(i === planSelIdx) return;
+    planSelIdx = i;
+    tl.querySelectorAll('.tlb').forEach(b => b.classList.toggle('sel', parseInt(b.dataset.i) === i));
+    document.getElementById('planDetail').innerHTML = planDetailHtml(i);
+  };
+  let dragging = false;
+  const pick = (e) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const b = el && el.closest ? el.closest('.tlb') : null;
+    if(b && tl.contains(b)) select(parseInt(b.dataset.i));
+  };
+  tl.addEventListener('pointerdown', (e) => { dragging = true; pick(e); });
+  tl.addEventListener('pointermove', (e) => { if(dragging) pick(e); });
+  const stopDrag = () => { dragging = false; };
+  tl.addEventListener('pointerup', stopDrag);
+  tl.addEventListener('pointercancel', stopDrag);
+  tl.addEventListener('pointerleave', stopDrag);
+  tl.addEventListener('click', (e) => {
+    const b = e.target.closest ? e.target.closest('.tlb') : null;
+    if(b) select(parseInt(b.dataset.i));
+  });
+}
+
+function goToPlanHour(i){
+  const dateStr = hourlyCache.hourly.time[i].slice(0,10);
+  const k = hourlyCache.daily.time.indexOf(dateStr);
+  if(k < 0) return;
+  planDayIdx = k; planSelIdx = i;
+  if(!isDaylightIdx(i)) planAllDay = true;
+  renderPlan();
+  showTab('plan');
+}
+
+// ----- History calendar -----
+function dayBucket(rows){
+  let fly = 0, ok = 0, n = 0;
+  rows.forEach(r => {
+    const tm = (r.LocalTime.split('T')[1] || '00:00');
+    const m = parseInt(tm.slice(0,2))*60 + parseInt(tm.slice(3,5));
+    if(m < 420 || m > 1080) return;   // 07:00-18:00 local
+    n++;
+    if(r.Verdict === 'FLYABLE'){ fly++; ok++; }
+    else if(r.Verdict === 'CAUTION') ok++;
+  });
+  return {n, flyH: fly*0.5, okH: ok*0.5};
+}
+function addMonthsStr(ym, delta){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m-1+delta, 1));
+  return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth()+1);
+}
+function renderCalendar(){
+  const holder = document.getElementById('calHolder');
+  if(!holder) return;
+  const now = localNow();
+  const today = now.dateStr;
+  if(!calMonth) calMonth = today.slice(0,7);
+  if(!calSelDay) calSelDay = today;
+  const byDate = new Map();
+  let earliest = today.slice(0,7);
+  historyRows.forEach(r => {
+    if(!r.LocalTime) return;
+    const d = r.LocalTime.slice(0,10);
+    if(!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d).push(r);
+    if(d.slice(0,7) < earliest) earliest = d.slice(0,7);
+  });
+  const [y,m] = calMonth.split('-').map(Number);
+  const dim = daysInMonth(calMonth);
+  const lead = (new Date(Date.UTC(y, m-1, 1)).getUTCDay() + 6) % 7;   // Monday first
+  const monthName = new Date(Date.UTC(y, m-1, 1)).toLocaleDateString('en-GB', {month:'long', year:'numeric', timeZone:'UTC'});
+  let cells = ['M','T','W','T','F','S','S'].map(d => `<span class="cal-h">${d}</span>`).join('');
+  cells += '<span></span>'.repeat(lead);
+  let nf = 0, nc = 0, nn = 0;
+  for(let d=1; d<=dim; d++){
+    const ds = `${calMonth}-${pad2(d)}`;
+    if(ds > today){ cells += `<span class="cal-d fut">${d}</span>`; continue; }
+    const b = dayBucket(byDate.get(ds) || []);
+    let cls = 'x', word = 'no data';
+    if(b.n > 0){
+      if(ds === today && now.hh < 18){ cls = 'p'; word = 'today, in progress'; }
+      else if(b.flyH >= 4){ cls = 'f'; word = 'flyable'; nf++; }
+      else if(b.okH >= 4){ cls = 'c'; word = 'caution'; nc++; }
+      else { cls = 'n'; word = 'no-fly'; nn++; }
+    }
+    cells += `<button type="button" class="cal-d ${cls}${ds===calSelDay?' sel':''}${ds===today?' today':''}" data-date="${ds}" aria-label="${ds}: ${word}">${d}</button>`;
+  }
+  holder.innerHTML = `<div class="section">
+    <div class="section-title"><span>Flying days</span><span style="text-transform:none; letter-spacing:0;">tap a day for the detail</span></div>
+    <div class="cal-nav"><button type="button" id="calPrev" ${calMonth <= earliest ? 'disabled' : ''} aria-label="Previous month">&#9664;</button><b>${monthName}</b><button type="button" id="calNext" ${calMonth >= today.slice(0,7) ? 'disabled' : ''} aria-label="Next month">&#9654;</button></div>
+    <div class="cal">${cells}</div>
+    <div class="tl-legend" style="margin-top:10px;"><span><i class="lg f"></i>&ge;4 h flyable</span><span><i class="lg c"></i>&ge;4 h incl. caution</span><span><i class="lg n"></i>less</span><span><i class="lg x"></i>no data</span></div>
+    <div class="hint">Colour is based on logged checks between 07:00 and 18:00 local. ${nf} flyable &middot; ${nc} caution &middot; ${nn} no-fly days this month.</div>
+    <div id="histResult" style="margin-top:14px;"></div>
+  </div>`;
+  document.getElementById('calPrev').addEventListener('click', () => { calMonth = addMonthsStr(calMonth, -1); renderCalendar(); });
+  document.getElementById('calNext').addEventListener('click', () => { calMonth = addMonthsStr(calMonth, 1); renderCalendar(); });
+  holder.querySelectorAll('.cal-d[data-date]').forEach(b => b.addEventListener('click', () => {
+    calSelDay = b.dataset.date;
+    holder.querySelectorAll('.cal-d').forEach(x => x.classList.toggle('sel', x === b));
+    showCalDay();
+  }));
+  showCalDay();
+}
+function showCalDay(){
+  const result = document.getElementById('histResult');
+  if(!result) return;
+  renderHistoryDay(calSelDay);
+  const head = new Date(calSelDay + 'T12:00:00Z').toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', timeZone:'UTC'});
+  result.insertAdjacentHTML('afterbegin', `<div class="day-head">${head}</div>`);
+}
+
+// ----- Tabs & sheets -----
+function showTab(name){
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'tab-' + name));
+  document.querySelectorAll('.tabbar .tab').forEach(t => {
+    const on = t.dataset.tab === name;
+    t.classList.toggle('on', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  try{ history.replaceState(null, '', '#' + name); }catch(e){}
+  window.scrollTo(0, 0);
+}
+function openSheet(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.hidden = false;
+  document.body.classList.add('noscroll');
+}
+function closeSheets(){
+  document.querySelectorAll('.sheet-back').forEach(s => { s.hidden = true; });
+  document.body.classList.remove('noscroll');
+}
+
 async function renderAll(entries){
   const now = localNow();
   const todayEntries = entries.concat(sessionEntries).filter(e=>e.dateStr===now.dateStr);
@@ -939,8 +1322,8 @@ async function renderAll(entries){
     const v = verdictFor(autoStation.gust, autoStation.ceilingFt, fcForVis.visKm, autoStation.precip);
     verdictLevel = v.level; verdictReasons = v.reasons;
     sourceTag = autoStation.live
-      ? `live station reading, fetched just now &middot; sensor ${autoStation.ageMin}min old (visibility still model-derived)`
-      : `automated station log &middot; ${autoStation.ageMin}min ago (visibility still model-derived)`;
+      ? `live station reading &middot; sensor ${autoStation.ageMin} min old &middot; visibility is model-derived`
+      : `automated station log &middot; ${autoStation.ageMin} min ago &middot; visibility is model-derived`;
   } else {
     const fc = forecastAt(nowIdxCache);
     const v = verdictFor(fc.gust, fc.ceilingFt, fc.visKm, fc.precip);
@@ -948,31 +1331,193 @@ async function renderAll(entries){
     sourceTag = "forecast &middot; no recent logged check or station reading";
   }
 
-  const app = document.getElementById('app');
-  const verdictLabel = verdictLevel==="flyable"?"Flyable":(verdictLevel==="caution"?"Caution":"No-fly");
+  liveVerdictLevel = verdictLevel;
+  const verdictLabel = levelWord(verdictLevel);
   const verdictReason = verdictReasons.length ? verdictReasons.join(" &middot; ") : "All parameters within standard VFR minima.";
 
-  let html = "";
-  html += `<div class="verdict ${verdictLevel}">
+  // ---- live values (station where it measures the thing, else forecast) ----
+  const fcNow = forecastAt(nowIdxCache);
+  const h = hourlyCache.hourly;
+  const cloud = h.cloud_cover[nowIdxCache];
+  const liveWindDir = autoStation ? compassToDeg(autoStation.dirCompass) : fcNow.windDir;
+  const liveWindSpeed = autoStation ? autoStation.windSpeed : fcNow.windSpeed;
+  const liveGust = autoStation ? autoStation.gust : fcNow.gust;
+  const liveCeilingFt = autoStation ? autoStation.ceilingFt : fcNow.ceilingFt;
+  const livePrecip = autoStation ? autoStation.precip : fcNow.precip;
+  const liveTemp = autoStation ? autoStation.temp : fcNow.temp;
+  const liveDew = autoStation ? autoStation.dew : fcNow.dew;
+  const windTag = autoStation
+    ? (autoStation.live ? `live station, ${autoStation.ageMin} min old` : `station log, ${autoStation.ageMin} min ago`)
+    : "forecast";
+  // QNH is only computed properly from a *live* fetch (needs the station's own
+  // elevation and temperature); otherwise fall back to the model's MSL pressure.
+  const hasLiveQnh = autoStation && autoStation.live && autoStation.qnh !== null && autoStation.qnh !== undefined;
+  const liveQnh = hasLiveQnh ? autoStation.qnh : fcNow.qnh;
+  const qnhTag = hasLiveQnh ? `live station, ${autoStation.ageMin} min old` : "forecast";
+
+  const windFlag = liveGust>CRIT.windNoFly?"bad":(liveGust>CRIT.windCaution?"warn":"ok");
+  const ceilFlag = liveCeilingFt===null ? "ok" : (liveCeilingFt<CRIT.ceilNoFly?"bad":(liveCeilingFt<CRIT.ceilCaution?"warn":"ok"));
+  const visFlag = fcNow.visKm<CRIT.visNoFly?"bad":(fcNow.visKm<CRIT.visCaution?"warn":"ok");
+  const precFlag = livePrecip==="None"?"ok":(livePrecip==="Light"?"warn":"bad");
+  const xw = crosswind(liveWindDir, liveGust, 150);
+
+  const okNames = [];
+  if(windFlag==="ok") okNames.push("wind");
+  if(ceilFlag==="ok") okNames.push("cloud base");
+  if(visFlag==="ok") okNames.push("visibility");
+  if(precFlag==="ok") okNames.push("rain");
+  const okLine = (verdictLevel!=="flyable" && okNames.length)
+    ? `<div class="okline">Within limits: ${okNames.join(", ")}.</div>` : "";
+
+  const trend = trendLine(verdictLevel);
+  const trendHtml = trend ? `<div class="trend ${trend.kind}"><span class="ti">${trend.kind==='up'?'↗':trend.kind==='down'?'↘':'→'}</span><span>${trend.text}</span></div>` : "";
+
+  // ---- NOW tab ----
+  let html = `<div class="verdict ${verdictLevel}">
     <div>
       <div class="label">Current assessment</div>
-      <div class="status">${verdictLabel}</div>
+      <div class="status"><span class="vg" aria-hidden="true">${levelGlyph(verdictLevel)}</span>${verdictLabel}</div>
       <div class="reason">${verdictReason}</div>
+      ${okLine}
+      ${trendHtml}
       <div class="src-tag">${sourceTag}</div>
     </div>
-    <div class="verdict-icon">${verdictLevel==="flyable"?"WITHIN LIMITS":verdictLevel==="caution"?"MONITOR CLOSELY":"GROUNDED"}</div>
+    <div class="verdict-icon">${verdictLevel==="flyable"?"WITHIN LIMITS":verdictLevel==="caution"?"MONITOR CLOSELY":"BELOW MINIMA"}</div>
   </div>`;
 
   if(!STORAGE_OK && !WORKER_URL){
-    html += `<div class="storage-note">Logging works this session, but entries won't persist after you close this page here &mdash; use "download log CSV" before you finish, or open this dashboard as a saved Claude artifact so entries carry over between visits.</div>`;
-  } else if(!STORAGE_OK && WORKER_URL){
-    html += `<div class="storage-note" style="background:var(--green-dim); color:var(--green);">Each saved check is written straight to your GitHub repo (see "Manual check history" below) &mdash; safe even if this browser tab closes right after saving.</div>`;
+    html += `<div class="storage-note">Logging works this session, but entries won't persist after you close this page &mdash; use "download log CSV" before you finish.</div>`;
   }
 
+  html += `<div class="grid">
+    <div class="card ${windFlag}">
+      <div class="k">Wind &middot; ${windTag}</div>
+      ${windArrowSvg(liveWindDir, 76)}
+      <div class="v mono">${liveWindSpeed}<span class="unit">kt</span></div>
+      <div class="sub">gust ${liveGust} kt &middot; ${degToCompass(liveWindDir)} (${Math.round(liveWindDir)}&deg;)</div>
+      <div class="sub">RWY 15/33 crosswind ${xw} kt</div>
+      <div class="sub lim">caution &gt;${CRIT.windCaution} &middot; limit &gt;${CRIT.windNoFly} kt gust</div>
+      <div class="flag ${windFlag}">${windFlag==='ok'?'below caution':windFlag==='warn'?'above caution':'above limit'}</div>
+    </div>
+    <div class="card ${ceilFlag}">
+      <div class="k">Cloud base &middot; ${windTag}</div>
+      <div class="v mono">${liveCeilingFt===null?'&gt;5000':liveCeilingFt}<span class="unit">ft</span></div>
+      <div class="sub">${autoStation ? "station cloud-height sensor" : `cloud cover ${cloud}% &middot; from temp/dew spread`}</div>
+      <div class="sub lim">caution &lt;${CRIT.ceilCaution} &middot; minimum ${CRIT.ceilNoFly} ft</div>
+      <div class="flag ${ceilFlag}">${ceilFlag==='ok'?'clear of minima':ceilFlag==='warn'?'marginal':'below minimum'}</div>
+    </div>
+    <div class="card ${visFlag}">
+      <div class="k">Visibility</div>
+      <div class="v mono">${fcNow.visKm}<span class="unit">km</span></div>
+      <div class="sub">model-derived, not observed</div>
+      <div class="sub lim">caution &lt;${CRIT.visCaution} &middot; minimum ${CRIT.visNoFly} km</div>
+      <div class="flag ${visFlag}">${visFlag==='ok'?'good':visFlag==='warn'?'reduced':'below minimum'}</div>
+    </div>
+    <div class="card ${precFlag}">
+      <div class="k">Rain &middot; ${windTag}</div>
+      <div class="v mono">${livePrecip}</div>
+      <div class="sub">${liveTemp.toFixed(0)}&deg;C / dew ${liveDew.toFixed(0)}&deg;C</div>
+      <div class="flag ${precFlag}">${precFlag==='ok'?'none detected':precFlag==='warn'?'light':'grounding'}</div>
+    </div>
+    <div class="card">
+      <div class="k">Temperature &middot; ${windTag}</div>
+      <div class="v mono">${liveTemp.toFixed(0)}<span class="unit">&deg;C</span></div>
+      <div class="sub">dew point ${liveDew.toFixed(0)}&deg;C &middot; spread ${(liveTemp-liveDew).toFixed(1)}&deg;C</div>
+      <div class="flag ok">${autoStation ? 'station' : 'model-derived'}</div>
+    </div>
+    <div class="card">
+      <div class="k">QNH &middot; ${qnhTag}</div>
+      <div class="v mono">${liveQnh===null?'n/a':liveQnh}<span class="unit">hPa</span></div>
+      <div class="sub">${hasLiveQnh ? 'from station pressure, elevation &amp; temp' : 'mean-sea-level pressure, model'}</div>
+      <div class="flag ok">altimeter setting est.</div>
+    </div>
+  </div>`;
+
+  // Next ~18 hours (tap a bar to open it in Plan)
+  const nextIdx = [];
+  for(let i=nowIdxCache; i<Math.min(nowIdxCache+18, hourlyCache.hourly.time.length); i++) nextIdx.push(i);
+  html += `<div class="section">
+    <div class="section-title"><span>Next 18 hours</span><button type="button" class="linkbtn" id="toPlanBtn">Open plan &rarr;</button></div>
+    <div class="tl" id="nowTl" style="height:86px;">${tlBarsHtml(nextIdx, null)}</div>
+    <div class="tl-legend"><span><i class="lg f"></i>flyable</span><span><i class="lg c"></i>caution</span><span><i class="lg n"></i>no-fly</span><span class="hint" style="margin:0;">model forecast &middot; tap a bar</span></div>
+  </div>
+  <div class="linkrow">
+    <a href="https://iweathar.co.za/display?s_id=1945" target="_blank" rel="noopener">Live station &#8599;</a>
+    <a href="https://www.fasx.co.za/index.php/en/pilot-resources-en/club-weather-en" target="_blank" rel="noopener">Field webcam &#8599;</a>
+    <button type="button" class="linkbtn" id="infoBtn2">Data &amp; limits</button>
+  </div>
+  <div class="advisory">Advisory only &mdash; verify on the on-site station and webcam before you fly.</div>`;
+
+  document.getElementById('app').innerHTML = html;
+  document.getElementById('updatedText').textContent = "updated " + new Date().toLocaleTimeString("en-GB",{timeZone:TZ, hour:'2-digit', minute:'2-digit'}) + " SAST";
+  document.getElementById('nowTl').addEventListener('click', (e) => {
+    const b = e.target.closest ? e.target.closest('.tlb') : null;
+    if(b) goToPlanHour(parseInt(b.dataset.i));
+  });
+  document.getElementById('toPlanBtn').addEventListener('click', () => { planDayIdx = 0; planSelIdx = null; renderPlan(); showTab('plan'); });
+  document.getElementById('infoBtn2').addEventListener('click', () => openSheet('infoSheet'));
+
+  // ---- PLAN tab ----
+  renderPlan();
+
+  // ---- HISTORY tab: past 24 h strip ----
+  const nowMsForHistory = Date.now();
+  const pastRows = historyRows
+    .map(r => ({...r, _t: parseFasxLocal(r.LocalTime)}))
+    .filter(r => !isNaN(r._t) && r._t <= nowMsForHistory && (nowMsForHistory - r._t) <= 24*3600*1000)
+    .sort((a,b) => a._t - b._t);
+  let pastStripHtml;
+  if(pastRows.length === 0){
+    pastStripHtml = `<div style="color:var(--dim); font-size:12px; padding:8px 0;">No automated entries logged in the past 24 hours yet.</div>`;
+  } else {
+    pastStripHtml = pastRows.map(r => {
+      const cls = csvVerdictClass(r.Verdict);
+      const [datePart, timePart] = r.LocalTime.split('T');
+      const [hh, mm] = (timePart||'00:00').split(':');
+      const label = mm === '00' ? hh : hh+':'+mm;
+      const src = r.VerdictSource || 'unknown';
+      const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}°/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
+      const reasons = reasonsForCsvRow(r).join('; ');
+      const detailText = `${hh}:${mm} local — ${r.Verdict}\n${windInfo}\nreason: ${reasons}`;
+      return `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}">
+        <div class="bar"></div>
+        <div class="t mono">${label}</div>
+      </div>`;
+    }).join('');
+  }
+  const pastHolder = document.getElementById('pastHolder');
+  pastHolder.innerHTML = `<div class="section">
+    <div class="section-title"><span>Past 24 hours</span><span style="text-transform:none; letter-spacing:0;">logged conditions &middot; swipe &larr;</span></div>
+    <div class="strip" id="pastStrip">${pastStripHtml}</div>
+    <div class="strip-detail" id="pastStripDetail"></div>
+    <div class="strip-hint">tap a block for the reason</div>
+  </div>`;
+  wireStripTaps('pastStrip', 'pastStripDetail');
+  const ps = document.getElementById('pastStrip');
+  if(ps) ps.scrollLeft = ps.scrollWidth;
+
+  renderCalendar();
+
+  // ---- session log table (History tab) ----
+  let logRows = "";
+  const allEntries = entries.concat(sessionEntries);
+  const seenAll = new Set(); const dedupAll = [];
+  for(let i=allEntries.length-1;i>=0;i--){ const k=allEntries[i].dateStr+allEntries[i].time; if(!seenAll.has(k)){ seenAll.add(k); dedupAll.unshift(allEntries[i]); } }
+  const recent = dedupAll.sort((a,b)=> (a.dateStr+a.time).localeCompare(b.dateStr+b.time)).slice(-15);
+  for(const e of recent){
+    const v = verdictFor(e.gust, e.ceilingFt, e.visKm, e.precip);
+    logRows += `<tr><td>${e.dateStr}</td><td>${e.time}</td><td>${e.observer||''}</td><td>${e.windDir}&deg;/${e.windSpeed}G${e.gust}kt</td><td>${e.visKm}km</td><td>${e.ceilingFt===null||e.ceilingFt===''?'clear':e.ceilingFt+'ft'}</td><td>${e.precip}</td><td class="badge-${levelClass(v.level)}">${v.level}</td></tr>`;
+  }
+  document.getElementById('sessionLogHolder').innerHTML = (logRows || sessionEntries.length) ? `<div class="section">
+    <div class="section-title"><span>Checks saved on this device</span><span style="text-transform:none; letter-spacing:0;">${STORAGE_OK ? 'saved persistently' : 'this session only'}</span></div>
+    <div class="tblwrap"><table class="logtbl"><thead><tr><th>Date</th><th>Time</th><th>Observer</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th></tr></thead>
+    <tbody>${logRows}</tbody></table></div>
+  </div>` : "";
+
+  // ---- LOG sheet ----
   const nearestSlot = scheduleCache.reduce((best,s)=> Math.abs(s.min-nowMin) < Math.abs(best.min-nowMin) ? s : best, scheduleCache[0]);
   let slotOptions = scheduleCache.map(s => `<option value="${s.label}" ${s.label===nearestSlot.label?'selected':''}>${s.label}</option>`).join('');
   slotOptions += `<option value="custom">custom&hellip;</option>`;
-
   let schedHtml = "";
   for(const s of scheduleCache){
     const logged = todayList.find(e=>e.time===s.label);
@@ -987,229 +1532,53 @@ async function renderAll(entries){
       schedHtml += `<div class="sched-item future"><div class="bar"></div><div class="t mono">${s.label}</div><div class="lbl">upcoming</div></div>`;
     }
   }
-
-  html += `<div class="section">
-    <details id="logCheckDetails">
-      <summary><span class="section-title"><span>Log a check</span><span style="text-transform:none; letter-spacing:0;">today's schedule: ${scheduleCache.map(s=>s.label).join(', ')}</span></span></summary>
-      <div style="margin-top:14px;">
-        <div style="font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); margin-bottom:8px;">Today's scheduled checks <span style="text-transform:none; letter-spacing:0; color:var(--dim);">&mdash; green = flyable &middot; amber = caution &middot; red = no-fly &middot; outline = not yet logged</span></div>
-        <div class="sched-strip" style="margin-bottom:18px;">${schedHtml}</div>
-        <div class="form-grid">
-          <div class="field"><label>Time slot</label><select id="f_slot">${slotOptions}</select></div>
-          <div class="field" id="f_custom_wrap" style="display:none;"><label>Custom time</label><input type="text" id="f_custom" placeholder="HH:MM"></div>
-          <div class="field"><label>Observer</label><input type="text" id="f_observer" placeholder="name"></div>
-          <div class="field"><label>Wind dir (&deg;)</label><input type="number" id="f_dir" min="0" max="360"></div>
-          <div class="field"><label>Wind speed (kt)</label><input type="number" id="f_speed" min="0"></div>
-          <div class="field"><label>Gust (kt)</label><input type="number" id="f_gust" min="0"></div>
-          <div class="field"><label>Visibility (km)</label><input type="number" id="f_vis" min="0" step="0.5"></div>
-          <div class="field"><label>Ceiling (ft AGL, blank = clear)</label><input type="number" id="f_ceil" min="0" step="50"></div>
-          <div class="field"><label>Precipitation</label>
-            <select id="f_precip"><option>None</option><option>Light</option><option>Moderate</option><option>Heavy</option></select>
-          </div>
-        </div>
-        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
-          <div class="checkline"><input type="checkbox" id="f_webcam"> webcam checked <input type="text" id="f_webcam_note" placeholder="what it showed (optional)"></div>
-          <div class="checkline"><input type="checkbox" id="f_station"> iWeathar station checked <input type="text" id="f_station_note" placeholder="what it showed (optional)"></div>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button id="prefillBtn">prefill from forecast</button>
-          <button id="saveBtn" class="primary">save check</button>
-          <button id="csvBtn">download log CSV</button>
-        </div>
-        <div class="disclaimer" style="margin-top:10px;">CSV pastes straight into cell A of a blank row on the Daily Log tab (columns A&ndash;I) &mdash; Verdict and Limiting Factor calculate automatically. Webcam/station check notes stay in the table below for reference; add them to column M by hand if you want them in the spreadsheet too.</div>
+  document.getElementById('logSheetBody').innerHTML = `
+    <div class="sheet-head"><b>Log a check</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+    <div style="font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); margin-bottom:8px;">Today's scheduled checks <span style="text-transform:none; letter-spacing:0;">&mdash; outline = not yet logged</span></div>
+    <div class="sched-strip" style="margin-bottom:18px;">${schedHtml}</div>
+    <div class="form-grid">
+      <div class="field"><label>Time slot</label><select id="f_slot">${slotOptions}</select></div>
+      <div class="field" id="f_custom_wrap" style="display:none;"><label>Custom time</label><input type="text" id="f_custom" placeholder="HH:MM"></div>
+      <div class="field"><label>Observer</label><input type="text" id="f_observer" placeholder="name"></div>
+      <div class="field"><label>Wind dir (&deg;)</label><input type="number" id="f_dir" min="0" max="360"></div>
+      <div class="field"><label>Wind speed (kt)</label><input type="number" id="f_speed" min="0"></div>
+      <div class="field"><label>Gust (kt)</label><input type="number" id="f_gust" min="0"></div>
+      <div class="field"><label>Visibility (km)</label><input type="number" id="f_vis" min="0" step="0.5"></div>
+      <div class="field"><label>Ceiling (ft AGL, blank = clear)</label><input type="number" id="f_ceil" min="0" step="50"></div>
+      <div class="field"><label>Precipitation</label>
+        <select id="f_precip"><option>None</option><option>Light</option><option>Moderate</option><option>Heavy</option></select>
       </div>
-    </details>
-  </div>`;
-
-  const fcNow = forecastAt(nowIdxCache);
-  const h = hourlyCache.hourly;
-  const cloud = h.cloud_cover[nowIdxCache];
-
-  // Prefer a fresh automated station reading over the forecast model wherever
-  // the station actually measures the thing in question. Visibility and QNH
-  // stay forecast-only: the station has no visibility sensor, and its raw
-  // pressure reading isn't confirmed to be corrected to sea level, so showing
-  // it as QNH could be actively misleading for an altimeter setting.
-  const liveWindDir = autoStation ? compassToDeg(autoStation.dirCompass) : fcNow.windDir;
-  const liveWindSpeed = autoStation ? autoStation.windSpeed : fcNow.windSpeed;
-  const liveGust = autoStation ? autoStation.gust : fcNow.gust;
-  const liveCeilingFt = autoStation ? autoStation.ceilingFt : fcNow.ceilingFt;
-  const livePrecip = autoStation ? autoStation.precip : fcNow.precip;
-  const liveTemp = autoStation ? autoStation.temp : fcNow.temp;
-  const liveDew = autoStation ? autoStation.dew : fcNow.dew;
-  const windTag = autoStation
-    ? (autoStation.live ? `live station, sensor ${autoStation.ageMin}min old` : `station log, ${autoStation.ageMin}min ago`)
-    : "forecast";
-
-  // QNH is only ever computed properly when a *live* fetch succeeds (the
-  // 30-min batch log doesn't carry pressure/elevation), since it needs a
-  // real barometric reduction using the station's own elevation and
-  // temperature -- a raw station pressure reading alone isn't QNH.
-  const hasLiveQnh = autoStation && autoStation.live && autoStation.qnh !== null && autoStation.qnh !== undefined;
-  const liveQnh = hasLiveQnh ? autoStation.qnh : fcNow.qnh;
-  const qnhTag = hasLiveQnh ? `live station, sensor ${autoStation.ageMin}min old` : "forecast";
-
-  const windFlag = liveGust>CRIT.windNoFly?"bad":(liveGust>CRIT.windCaution?"warn":"ok");
-  const ceilFlag = liveCeilingFt===null ? "ok" : (liveCeilingFt<CRIT.ceilNoFly?"bad":(liveCeilingFt<CRIT.ceilCaution?"warn":"ok"));
-  const visFlag = fcNow.visKm<CRIT.visNoFly?"bad":(fcNow.visKm<CRIT.visCaution?"warn":"ok");
-  const precFlag = livePrecip==="None"?"ok":(livePrecip==="Light"?"warn":"bad");
-
-  html += `<div class="grid">
-    <div class="card">
-      <div class="k">Wind (${windTag})</div>
-      ${windArrowSvg(liveWindDir, 88)}
-      <div class="v mono">${liveWindSpeed}<span class="unit">kt</span></div>
-      <div class="sub">gust ${liveGust}kt &middot; ${degToCompass(liveWindDir)} (${Math.round(liveWindDir)}&deg;)</div>
-      <div class="flag ${windFlag}">${windFlag==='ok'?'below caution':windFlag==='warn'?'above caution':'above limit'}</div>
     </div>
-    <div class="card">
-      <div class="k">Est. ceiling (${windTag})</div>
-      <div class="v mono">${liveCeilingFt===null?'&gt;5000':liveCeilingFt}<span class="unit">ft</span></div>
-      <div class="sub">${autoStation ? "from station cloud-height sensor" : `cloud cover ${cloud}% &middot; derived from temp/dew point spread`}</div>
-      <div class="flag ${ceilFlag}">${ceilFlag==='ok'?'clear of minima':ceilFlag==='warn'?'marginal':'below minimum'}</div>
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+      <div class="checkline"><input type="checkbox" id="f_webcam"> webcam checked <input type="text" id="f_webcam_note" placeholder="what it showed (optional)"></div>
+      <div class="checkline"><input type="checkbox" id="f_station"> iWeathar station checked <input type="text" id="f_station_note" placeholder="what it showed (optional)"></div>
     </div>
-    <div class="card">
-      <div class="k">Visibility</div>
-      <div class="v mono">${fcNow.visKm}<span class="unit">km</span></div>
-      <div class="sub">model-derived, not observed (no station sensor)</div>
-      <div class="flag ${visFlag}">${visFlag==='ok'?'good':visFlag==='warn'?'reduced':'below minimum'}</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button id="prefillBtn">prefill from forecast</button>
+      <button id="saveBtn" class="primary">save check</button>
+      <button id="csvBtn">download log CSV</button>
     </div>
-    <div class="card">
-      <div class="k">Precipitation (${windTag})</div>
-      <div class="v mono">${livePrecip}</div>
-      <div class="sub">${liveTemp.toFixed(0)}&deg;C / dew ${liveDew.toFixed(0)}&deg;C</div>
-      <div class="flag ${precFlag}">${precFlag==='ok'?'none detected':precFlag==='warn'?'light':'grounding'}</div>
+    <div class="disclaimer" style="margin-top:10px;">Each saved check is written straight to the GitHub repo (see "Manual check history" on the History tab). CSV pastes into cell A of a blank row on the Daily Log tab (columns A&ndash;I).</div>`;
+
+  // ---- INFO sheet ----
+  const di0 = dayInfo(now.dateStr);
+  document.getElementById('infoBody').innerHTML = `
+    <div class="sheet-head"><b>About this data</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+    <div class="meta mono" style="margin-bottom:12px;">
+      <span>34&deg;02'53"S 20&deg;28'28"E</span><span>407 ft MSL</span><span>RWY 15/33 &amp; 06/24</span><span>circuit 1400 ft AGL</span>${di0 ? `<span>sunrise ${di0.sunriseStr} &middot; sunset ${di0.sunsetStr}</span>` : ""}
     </div>
-    <div class="card">
-      <div class="k">Temperature (${windTag})</div>
-      <div class="v mono">${liveTemp.toFixed(0)}<span class="unit">&deg;C</span></div>
-      <div class="sub">dew point ${liveDew.toFixed(0)}&deg;C &middot; spread ${(liveTemp-liveDew).toFixed(1)}&deg;C</div>
-      <div class="flag ok">${autoStation ? 'station' : 'model-derived'}</div>
-    </div>
-    <div class="card">
-      <div class="k">QNH (${qnhTag})</div>
-      <div class="v mono">${liveQnh===null?'n/a':liveQnh}<span class="unit">hPa</span></div>
-      <div class="sub">${hasLiveQnh ? 'reduced from station pressure using its own elevation &amp; temperature' : 'mean-sea-level pressure, model-derived'}</div>
-      <div class="flag ok">altimeter setting est.</div>
-    </div>
-  </div>`;
-
-  const rwyNotes = {"15/33": "asphalt/grass, primary", "06/24": "grass only, no lighting"};
-   const xwindRows = RUNWAYS.filter(rwy => rwy.name === "15/33").map(rwy => {
-    const xw = crosswind(liveWindDir, liveGust, rwy.hdg);
-    return `<b>RWY ${rwy.name}</b> (${rwyNotes[rwy.name]||''}) &mdash; ${xw} kt crosswind at current gust`;
-  }).join('<br>\n      ');
-  html += `<div class="section">
-    <div class="section-title">Crosswind component (${windTag})</div>
-    <div class="thresholds">
-      ${xwindRows}
-    </div>
-  </div>`;
-
-  const nowMsForHistory = Date.now();
-  const pastRows = historyRows
-    .map(r => ({...r, _t: parseFasxLocal(r.LocalTime)}))
-    .filter(r => !isNaN(r._t) && r._t <= nowMsForHistory && (nowMsForHistory - r._t) <= 24*3600*1000)
-    .sort((a,b) => a._t - b._t);
-
-  let pastStripHtml;
-  if(pastRows.length === 0){
-    pastStripHtml = `<div style="color:var(--dim); font-size:12px; padding:8px 0;">${HISTORY_CSV_URL ? 'No automated entries logged yet in the past 24 hours \u2014 check back once the GitHub Action has run a few times.' : 'Set HISTORY_CSV_URL near the top of this file (after publishing the automated log) to populate this strip.'}</div>`;
-  } else {
-    pastStripHtml = pastRows.map(r => {
-      const cls = csvVerdictClass(r.Verdict);
-      const [datePart, timePart] = r.LocalTime.split('T');
-      const [hh, mm] = (timePart||'00:00').split(':');
-      const label = mm === '00' ? hh : hh+':'+mm;
-      const src = r.VerdictSource || 'unknown';
-      const windInfo = src==='station' ? `${r.St_WindDir||''}/${r.St_WindAvg_kt||''}G${r.St_WindGust_kt||''}kt (station)` : `${r.Fc_WindDir||''}\u00b0/${r.Fc_WindSpeed_kt||''}G${r.Fc_Gust_kt||''}kt (forecast)`;
-      const reasons = reasonsForCsvRow(r).join('; ');
-      const detailText = `${hh}:${mm} local \u2014 ${r.Verdict}\n${windInfo}\nreason: ${reasons}`;
-      return `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}">
-        <div class="bar"></div>
-        <div class="t mono">${label}</div>
-      </div>`;
-    }).join('');
-  }
-  html += `<div class="section">
-    <div class="section-title"><span>Past 24 hours (actual)</span><span style="color:var(--dim); font-weight:400; text-transform:none; letter-spacing:0;">logged conditions \u2014 station where available, forecast fallback otherwise</span></div>
-    <div class="strip" id="pastStrip">${pastStripHtml}</div>
-    <div class="strip-detail" id="pastStripDetail"></div>
-    <div class="strip-hint">tap a block for the reason</div>
-  </div>`;
-
-  const times = h.time;
-  let stripHtml = "";
-  for(let i=nowIdxCache; i<Math.min(nowIdxCache+24, times.length); i++){
-    const fc = forecastAt(i);
-    const vv = verdictFor(fc.gust, fc.ceilingFt, fc.visKm, fc.precip);
-    const cls = levelClass(vv.level);
-    const dt = new Date(Date.parse(times[i]));
-    const hourLabel = dt.toLocaleString("en-US",{timeZone:TZ, hour:'2-digit', hour12:false});
-    const reasonText = vv.reasons.length ? vv.reasons.join('; ') : 'all parameters within standard VFR minima';
-    const detailText = `${hourLabel}:00 local \u2014 ${vv.level.toUpperCase()}\n${fc.windDir}\u00b0/${fc.windSpeed}G${fc.gust}kt \u00b7 ${fc.ceilingFt===null?'clear':fc.ceilingFt+'ft'} ceiling \u00b7 ${fc.visKm}km vis \u00b7 ${fc.precip}\nreason: ${reasonText}`;
-    stripHtml += `<div class="strip-item ${cls}" data-detail="${escapeAttr(detailText)}">
-      <div class="bar"></div>
-      <div class="t mono">${hourLabel}</div>
-    </div>`;
-  }
-  html += `<div class="section">
-    <div class="section-title"><span>24-hour forecast outlook</span><span style="color:var(--dim); font-weight:400; text-transform:none; letter-spacing:0;">model-derived, hourly</span></div>
-    <div class="strip" id="forecastStrip">${stripHtml}</div>
-    <div class="strip-detail" id="forecastStripDetail"></div>
-    <div class="strip-hint">tap a block for the reason</div>
-  </div>`;
-
-  const todayDateStr = now.dateStr;
-  const defaultHistDate = addDaysToDateStr(todayDateStr, -1);
-  html += `<div class="section">
-    <div class="section-title"><span>History browser</span><span style="text-transform:none; letter-spacing:0;">go back as far as the automated log has data</span></div>
-    <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
-      <div class="field"><label>Date</label><input type="date" id="hist_date" value="${defaultHistDate}" max="${todayDateStr}"></div>
-      <button id="histGoBtn" class="primary">Show day</button>
-      <button id="histYesterdayBtn">Yesterday</button>
-      <button id="histWeekBtn">-7 days</button>
-      <button id="histMonthBtn">-30 days</button>
-    </div>
-    <div id="histResult"><div style="color:var(--dim); font-size:12px;">Loading&hellip;</div></div>
-  </div>`;
-
-  html += `<div class="section">
-    <div class="section-title">Raw forecast readout</div>
-    <div class="raw mono"><span class="k">FASX</span> ${times[nowIdxCache]} LOCAL <span class="k">WIND</span> ${String(fcNow.windDir).padStart(3,'0')}${degToCompass(fcNow.windDir)}${fcNow.windSpeed}G${fcNow.gust}KT <span class="k">VIS</span> ${fcNow.visKm}KM <span class="k">CLD</span> ${cloud}% <span class="k">CIG(EST)</span> ${fcNow.ceilingFt===null?'NSC':fcNow.ceilingFt+'FT'} <span class="k">TEMP/DEW</span> ${fcNow.temp.toFixed(0)}/${fcNow.dew.toFixed(0)}C <span class="k">PRECIP</span> ${fcNow.precip.toUpperCase()}</div>
-    <div class="disclaimer">The cards and crosswind figures above try, on every load and every "refresh" click, to fetch the station's live reading on demand via a background Worker (which isn't a browser, so it isn't blocked the way this page itself would be) &mdash; if that succeeds you'll see "live station" in each card's title. If the live fetch fails for any reason, it falls back to the last automated log entry (refreshed every ~30 minutes regardless), then to the forecast model as a last resort &mdash; each card's title always says which one you're looking at. <a href="https://iweathar.co.za/display?s_id=1945" target="_blank" rel="noopener" style="color:var(--cyan);">Check the station directly</a> if you want to cross-verify. The raw readout line above is always pure model output, regardless of what the cards show, as a stable reference point. The field also has a <a href="https://www.fasx.co.za/index.php/en/pilot-resources-en/club-weather-en" target="_blank" rel="noopener" style="color:var(--cyan);">webcam</a> &mdash; the club's own site warns it's a still photo only and not to be relied on for aviation decisions, since the timestamp/heading shown may not match reality.</div>
-  </div>`;
-
-  let logRows = "";
-  const allToday = dedup;
-  const allEntries = entries.concat(sessionEntries);
-  const seenAll = new Set(); const dedupAll = [];
-  for(let i=allEntries.length-1;i>=0;i--){ const k=allEntries[i].dateStr+allEntries[i].time; if(!seenAll.has(k)){ seenAll.add(k); dedupAll.unshift(allEntries[i]); } }
-  const recent = dedupAll.sort((a,b)=> (a.dateStr+a.time).localeCompare(b.dateStr+b.time)).slice(-15);
-  for(const e of recent){
-    const v = verdictFor(e.gust, e.ceilingFt, e.visKm, e.precip);
-    logRows += `<tr><td>${e.dateStr}</td><td>${e.time}</td><td>${e.observer||''}</td><td>${e.windDir}&deg;/${e.windSpeed}G${e.gust}kt</td><td>${e.visKm}km</td><td>${e.ceilingFt===null||e.ceilingFt===''?'clear':e.ceilingFt+'ft'}</td><td>${e.precip}</td><td class="badge-${levelClass(v.level)}">${v.level}</td></tr>`;
-  }
-  html += `<div class="section">
-    <div class="section-title"><span>Logged checks (last 15)</span><span style="text-transform:none; letter-spacing:0;">${STORAGE_OK ? 'saved persistently' : 'this session only'}</span></div>
-    <table class="logtbl"><thead><tr><th>Date</th><th>Time</th><th>Observer</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th></tr></thead>
-    <tbody>${logRows || '<tr><td colspan="8" style="text-align:center; padding:16px;">No checks logged yet</td></tr>'}</tbody></table>
-  </div>`;
-
-  html += `<div class="section">
-    <div class="section-title">Current thresholds</div>
+    <div class="disclaimer" style="font-size:12px;">Cards say where each number comes from. <b>Live station</b> = the on-site iWeathar sensor (wind, temperature, dew point, cloud base, rain), fetched on every load and refresh. If that fails, the last automated log entry (logged about every 30 minutes) is used, then the Open-Meteo forecast model as a last resort. <b>Visibility and the hour-by-hour outlook are always model-derived</b> &mdash; the station has no visibility sensor. Check the <a href="https://iweathar.co.za/display?s_id=1945" target="_blank" rel="noopener" style="color:var(--cyan);">station</a> and the <a href="https://www.fasx.co.za/index.php/en/pilot-resources-en/club-weather-en" target="_blank" rel="noopener" style="color:var(--cyan);">webcam</a> directly. The club notes the webcam is a still photo and shouldn't be relied on for aviation decisions.</div>
+    <div class="section-title" style="margin-top:16px;">Current thresholds</div>
     <div class="thresholds">
       <b>Wind</b> caution &gt;${CRIT.windCaution}kt, no-fly &gt;${CRIT.windNoFly}kt gust &middot;
       <b>Ceiling</b> caution &lt;${CRIT.ceilCaution}ft, no-fly &lt;${CRIT.ceilNoFly}ft AGL &middot;
       <b>Visibility</b> caution &lt;${CRIT.visCaution}km, no-fly &lt;${CRIT.visNoFly}km &middot;
-      <b>Precip</b> light = caution, moderate/heavy = no-fly<br>
-      Generic VFR starting point &mdash; edit the constants at the top of this file's script to match your operator's actual limits.
+      <b>Precip</b> light = caution, moderate/heavy = no-fly<br>Generic VFR starting point &mdash; not your operator's official limits.
     </div>
-  </div>`;
+    <div class="section-title" style="margin-top:16px;">Raw forecast readout</div>
+    <div class="raw mono"><span class="k">FASX</span> ${hourlyCache.hourly.time[nowIdxCache]} LOCAL <span class="k">WIND</span> ${String(fcNow.windDir).padStart(3,'0')}${degToCompass(fcNow.windDir)}${fcNow.windSpeed}G${fcNow.gust}KT <span class="k">VIS</span> ${fcNow.visKm}KM <span class="k">CLD</span> ${cloud}% <span class="k">CIG(EST)</span> ${fcNow.ceilingFt===null?'NSC':fcNow.ceilingFt+'FT'} <span class="k">TEMP/DEW</span> ${fcNow.temp.toFixed(0)}/${fcNow.dew.toFixed(0)}C <span class="k">PRECIP</span> ${fcNow.precip.toUpperCase()}</div>`;
 
-  app.innerHTML = html;
-  document.getElementById('updatedText').textContent = "updated " + new Date().toLocaleTimeString("en-GB",{timeZone:TZ, hour:'2-digit', minute:'2-digit'}) + " SAST";
-
+  // ---- form wiring ----
   document.getElementById('f_slot').addEventListener('change', (e)=>{
     document.getElementById('f_custom_wrap').style.display = e.target.value==='custom' ? 'flex' : 'none';
   });
@@ -1271,6 +1640,7 @@ async function renderAll(entries){
     renderAutomatedHistory();
     renderManualHistory();
     renderAircraftStatus();
+    closeSheets();
 
     if(WORKER_URL && githubStatus !== 'synced'){
       alert('Saved locally, but GitHub sync failed (' + githubStatus + '). Use "download log CSV" as a backup so this entry isn\'t lost.');
@@ -1293,32 +1663,6 @@ async function renderAll(entries){
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-
-  const histDateEl = document.getElementById('hist_date');
-  if(histDateEl){
-    document.getElementById('histGoBtn').addEventListener('click', ()=>{
-      if(histDateEl.value) renderHistoryDay(histDateEl.value);
-    });
-    document.getElementById('histYesterdayBtn').addEventListener('click', ()=>{
-      const d = addDaysToDateStr(todayDateStr, -1);
-      histDateEl.value = d;
-      renderHistoryDay(d);
-    });
-    document.getElementById('histWeekBtn').addEventListener('click', ()=>{
-      const d = addDaysToDateStr(todayDateStr, -7);
-      histDateEl.value = d;
-      renderHistoryDay(d);
-    });
-    document.getElementById('histMonthBtn').addEventListener('click', ()=>{
-      const d = addDaysToDateStr(todayDateStr, -30);
-      histDateEl.value = d;
-      renderHistoryDay(d);
-    });
-    renderHistoryDay(histDateEl.value);
-  }
-
-  wireStripTaps('pastStrip', 'pastStripDetail');
-  wireStripTaps('forecastStrip', 'forecastStripDetail');
 }
 
 function parseCsv(text){
@@ -1355,8 +1699,8 @@ async function renderAutomatedHistory(){
     }).join('');
     holder.innerHTML = `<div class="section">
       <div class="section-title"><span>Automated forecast &amp; station history</span><span style="text-transform:none; letter-spacing:0;">logged every ~30min by a Cloudflare Worker, independent of this page being open</span></div>
-      <table class="logtbl"><thead><tr><th>Time</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th><th>Source</th></tr></thead>
-      <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:16px;">No automated entries yet</td></tr>'}</tbody></table>
+      <div class="tblwrap"><table class="logtbl"><thead><tr><th>Time</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th><th>Source</th></tr></thead>
+      <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:16px;">No automated entries yet</td></tr>'}</tbody></table></div>
       <div class="disclaimer" style="margin-top:8px;">"station" rows use actual wind/temp/dew point from the on-site iWeathar sensor (visibility &amp; precip still come from the forecast model, since the station doesn't measure those). "forecast" rows mean the station was offline or unreachable at that check, so it fell back to model data entirely.</div>
     </div>`;
   }catch(e){
@@ -1380,8 +1724,8 @@ async function renderManualHistory(){
     }).join('');
     holder.innerHTML = `<div class="section">
       <div class="section-title"><span>Manual check history (synced to GitHub)</span><span style="text-transform:none; letter-spacing:0;">written directly by this dashboard on save, permanent regardless of browser</span></div>
-      <table class="logtbl"><thead><tr><th>Date</th><th>Time</th><th>Observer</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th></tr></thead>
-      <tbody>${rowsHtml || '<tr><td colspan="8" style="text-align:center; padding:16px;">No synced checks yet</td></tr>'}</tbody></table>
+      <div class="tblwrap"><table class="logtbl"><thead><tr><th>Date</th><th>Time</th><th>Observer</th><th>Wind</th><th>Vis</th><th>Ceiling</th><th>Precip</th><th>Verdict</th></tr></thead>
+      <tbody>${rowsHtml || '<tr><td colspan="8" style="text-align:center; padding:16px;">No synced checks yet</td></tr>'}</tbody></table></div>
     </div>`;
   }catch(e){
     holder.innerHTML = '';
@@ -1393,7 +1737,7 @@ async function load(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
       `&hourly=temperature_2m,dew_point_2m,precipitation,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,visibility,pressure_msl`+
-      `&daily=sunset&wind_speed_unit=kn&timezone=${encodeURIComponent(TZ)}&forecast_days=3`;
+      `&daily=sunrise,sunset&wind_speed_unit=kn&timezone=${encodeURIComponent(TZ)}&forecast_days=7`;
     const res = await fetch(url);
     if(!res.ok) throw new Error("weather service returned "+res.status);
     const data = await res.json();
@@ -1403,7 +1747,7 @@ async function load(){
     const nowMs = Date.now();
     let nowIdx = 0, bestDiff = Infinity;
     for(let i=0;i<times.length;i++){
-      const diff = Math.abs(Date.parse(times[i]) - nowMs);
+      const diff = Math.abs(parseFasxLocal(times[i]) - nowMs);
       if(diff < bestDiff){ bestDiff = diff; nowIdx = i; }
     }
     nowIdxCache = nowIdx;
@@ -1446,41 +1790,6 @@ function computeMonthAvailability(reg, yearMonth, todayStr) {
     if (dayStr > lastDay) break;
     daysChecked++;
     const grounding = groundingFor(dayStr);
-    if (grounding) {
-      groundedDays++;
-      groundedDetail.push(`${dayStr} \u2014 ${grounding.GroundedNote || 'no note'}`);
-      continue;
-    }
-    const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
-    if (dayRows.length === 0) { noDataDays++; noDataDetail.push(dayStr); continue; }
-    const flyableHours = dayRows.filter(r => r.Verdict !== 'NO-FLY').length * 0.5;
-    if (flyableHours < 4) {
-      weatherBadDays++;
-      weatherBadDetail.push(`${dayStr} \u2014 ${flyableHours}h flyable`);
-    } else {
-      availableDays++;
-    }
-  }
-  return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays, groundedDetail, weatherBadDetail, noDataDetail };
-}
-  function computeMonthAvailability(reg, yearMonth, todayStr) {
-  const dim = daysInMonth(yearMonth);
-  const monthEnd = `${yearMonth}-${String(dim).padStart(2, '0')}`;
-  const lastDay = todayStr < monthEnd ? todayStr : monthEnd;
-  const groundingFor = (dayStr) => aircraftRows.find(r => {
-    if (r.Registration !== reg) return false;
-    const start = r.GroundedDate;
-    const end = (r.UngroundedDate && r.UngroundedDate !== '') ? r.UngroundedDate : null;
-    if (end === null) return dayStr >= start;
-    return dayStr >= start && dayStr < end;
-  });
-  let groundedDays = 0, weatherBadDays = 0, noDataDays = 0, availableDays = 0, daysChecked = 0;
-  const groundedDetail = [], weatherBadDetail = [], noDataDetail = [];
-  for (let d = 1; d <= dim; d++) {
-    const dayStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
-    if (dayStr > lastDay) break;
-    daysChecked++;
-    const grounding = groundingFor(dayStr);
     if (grounding) { groundedDays++; groundedDetail.push(`${dayStr} \u2014 ${grounding.GroundedNote || 'no note'}`); continue; }
     const dayRows = historyRows.filter(r => r.LocalTime && r.LocalTime.startsWith(dayStr));
     if (dayRows.length === 0) { noDataDays++; noDataDetail.push(dayStr); continue; }
@@ -1501,7 +1810,42 @@ function computeMonthAvailability(reg, yearMonth, todayStr) {
   }
   return { daysInMonth: dim, daysChecked, groundedDays, weatherBadDays, noDataDays, availableDays, groundedDetail, weatherBadDetail, noDataDetail };
 }
-  document.getElementById('refreshBtn').addEventListener('click', load);
+document.getElementById('refreshBtn').addEventListener('click', load);
+
+// tabs
+document.querySelectorAll('.tabbar .tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+(function(){
+  const h = (location.hash || '').replace('#','');
+  if (['now','plan','fleet','history'].indexOf(h) !== -1) showTab(h);
+})();
+window.addEventListener('hashchange', () => {
+  const h = (location.hash || '').replace('#','');
+  if (['now','plan','fleet','history'].indexOf(h) !== -1) showTab(h);
+});
+
+// sheets
+document.getElementById('fab').addEventListener('click', () => openSheet('logSheet'));
+document.getElementById('infoBtn').addEventListener('click', () => openSheet('infoSheet'));
+document.querySelectorAll('.sheet-back').forEach(b => b.addEventListener('click', (e) => {
+  if (e.target === b || (e.target.closest && e.target.closest('[data-close]'))) closeSheets();
+}));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
+
+// day / night theme
+function syncThemeBtn(){
+  const light = document.documentElement.getAttribute('data-theme') === 'light';
+  const b = document.getElementById('themeBtn');
+  b.textContent = light ? '\u263E Night' : '\u2600 Day';
+  b.setAttribute('aria-label', light ? 'Switch to night (dark) mode' : 'Switch to day (light) mode');
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('fasxTheme', next); } catch (e) {}
+  syncThemeBtn();
+});
+syncThemeBtn();
+
 load();
 </script>
 
