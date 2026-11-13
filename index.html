@@ -399,6 +399,61 @@
   .ct-duebtns{display:flex; gap:8px; flex-wrap:wrap;}
   .ct-due .ct-dim{color:var(--text); opacity:.8;}
   .ct-due.ok{background:var(--green-dim); border-color:var(--green-line);}
+
+  /* ===== printable report ===== */
+  #reportOverlay{display:none; position:fixed; inset:0; z-index:90; background:#8b95a1; flex-direction:column;}
+  #reportOverlay.on{display:flex;}
+  .rpt-bar{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--line); color:var(--text);}
+  .rpt-bar #rptTitle{font-size:12px; color:var(--sub); text-align:center; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #rptScroll{flex:1; overflow:auto; padding:10px 0 30px; -webkit-overflow-scrolling:touch;}
+  #rptPages{width:794px; margin:0 auto; transform-origin:top center;}
+  .rpt-page{width:210mm; min-height:297mm; background:#fff; color:#17212b; margin:0 auto 14px; box-shadow:0 8px 30px #0005; display:flex; flex-direction:column; font-family:'Inter',system-ui,'Segoe UI',Arial,sans-serif; font-size:11px; line-height:1.4; position:relative;}
+  .rpt-page *{box-sizing:border-box;}
+  .rpt-hd{background:#10283d; color:#fff; padding:20px 34px 16px; display:flex; justify-content:space-between; align-items:flex-end; border-bottom:4px solid #1c8fb0;}
+  .rpt-co{font-size:10px; letter-spacing:.14em; text-transform:uppercase; opacity:.75;}
+  .rpt-hd h1{margin:2px 0 0; font-size:21px; font-weight:700; color:#fff;}
+  .rpt-r{text-align:right; font-size:10.5px; line-height:1.5;} .rpt-r b{font-size:13px;}
+  .rpt-prov{display:inline-block; margin-left:8px; border:1.5px solid #ffb3a8; color:#ffb3a8; font-size:8.5px; font-weight:700; letter-spacing:.1em; padding:1px 6px; border-radius:3px;}
+  .rpt-body{padding:14px 34px 10px; flex:1;}
+  .rpt-ref{display:flex; justify-content:space-between; gap:12px; color:#5d6b7a; font-size:10px; margin-bottom:11px; border-bottom:1px solid #d8e0e8; padding-bottom:7px;} .rpt-ref b{color:#17212b;}
+  .rpt-kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;}
+  .rpt-k{border:1px solid #d8e0e8; border-radius:8px; padding:8px 11px; background:#f3f6f9;}
+  .rpt-k .l{font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#5d6b7a;} .rpt-k .v{font-size:20px; font-weight:700; margin-top:2px;} .rpt-k .s{font-size:9.3px; color:#5d6b7a;}
+  .rpt-k.bad{background:#fdeeed; border-color:#f0c4c0;} .rpt-k.bad .v{color:#d4453b;} .rpt-k.good{background:#e9f7f0; border-color:#bfe5d1;} .rpt-k.good .v{color:#1f9d63;}
+  .rpt-page h2{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#5d6b7a; margin:12px 0 5px; font-weight:700;}
+  .rpt-t{width:100%; border-collapse:collapse; font-size:10.5px;}
+  .rpt-t th{background:#f3f6f9; text-align:right; font-weight:600; color:#5d6b7a; padding:5px 7px; border-bottom:1.5px solid #d8e0e8; font-size:9.5px;}
+  .rpt-t th:first-child,.rpt-t td:first-child{text-align:left;}
+  .rpt-t td{padding:5px 7px; border-bottom:1px solid #d8e0e8; text-align:right; font-variant-numeric:tabular-nums; vertical-align:top;}
+  .rpt-t td small{display:block; color:#5d6b7a; font-size:9px; text-align:left;}
+  .rpt-t tr{break-inside:avoid; page-break-inside:avoid;}
+  .rpt-t tr.tot td{font-weight:700; background:#f3f6f9; border-top:1.5px solid #17212b;}
+  .rpt-t .pos{color:#1f9d63; font-weight:700;} .rpt-t .neg{color:#d4453b; font-weight:700;}
+  .rpt-wx{table-layout:fixed;} .rpt-wx td{padding:3.5px 7px;} .rpt-wx td div{margin-bottom:1px; font-size:9.8px;}
+  .rpt-wx td:nth-child(1),.rpt-wx td:nth-child(2){white-space:nowrap;}
+  .rpt-wx td:nth-child(4){font-size:9.5px; color:#3b4856;}
+  .rpt-two{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .rpt-card{border:1px solid #d8e0e8; border-radius:8px; padding:9px 11px; background:#fff;}
+  .rpt-card svg{display:block; max-width:100%; height:auto;}
+  .rpt-leg{display:flex; gap:12px; font-size:9px; color:#5d6b7a; margin-top:4px; flex-wrap:wrap;} .rpt-leg i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px;}
+  .rpt-note{font-size:9.5px; color:#5d6b7a;}
+  .rpt-pill{display:inline-block; padding:1px 8px; border-radius:99px; font-size:9.5px; font-weight:700; background:#eef2f6; color:#5d6b7a;} .rpt-pill.g{background:#e0f4ea; color:#12724a;} .rpt-pill.m{background:#fbe3e1; color:#a63a34;}
+  .rpt-confirm{margin-top:8px; background:#f3f6f9; break-inside:avoid; page-break-inside:avoid;}
+  .rpt-chk{display:flex; gap:8px; align-items:flex-start; margin:4px 0; font-size:10.5px;} .rpt-chk i{width:11px; height:11px; border:1.4px solid #17212b; border-radius:2px; margin-top:1px; flex:0 0 auto;}
+  .rpt-sig{display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:16px;} .rpt-sig div{border-top:1px solid #17212b; padding-top:4px; font-size:9.5px; color:#5d6b7a;}
+  .rpt-ft{margin:0 34px 14px; border-top:1px solid #d8e0e8; padding-top:7px; display:flex; justify-content:space-between; gap:12px; font-size:8.5px; color:#5d6b7a;}
+  @page{size:A4; margin:0;}
+  @media print{
+    body.rpt-open > *:not(#reportOverlay){display:none !important;}
+    body.rpt-open{background:#fff !important; padding:0 !important; overflow:visible !important;}
+    body.rpt-open #reportOverlay{position:static !important; display:block !important; background:#fff !important; overflow:visible !important;}
+    .rpt-bar{display:none !important;}
+    #rptScroll{overflow:visible !important; padding:0 !important;}
+    #rptPages{zoom:1 !important; width:210mm !important; margin:0 !important;}
+    .rpt-page{margin:0 !important; box-shadow:none !important; min-height:295mm !important; break-after:page; page-break-after:always; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    .rpt-page:last-child{break-after:auto; page-break-after:auto;}
+    .rpt-page *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
 </style>
 <script>
 (function(){
@@ -490,6 +545,8 @@
     <div id="unlockMsg" class="hint" role="status"></div>
   </form>
 </div></div>
+<div class="sheet-back" id="pdfSheet" hidden><div class="sheet-body" id="pdfSheetBody" role="dialog" aria-modal="true" aria-label="Create PDF"></div></div>
+<div id="reportOverlay" role="dialog" aria-label="PDF preview"><div class="rpt-bar"><button type="button" id="rptClose">&#10005; Close</button><span id="rptTitle"></span><button type="button" id="rptPrint" class="primary">Print / Save as PDF</button></div><div id="rptScroll"><div id="rptPages"></div></div></div>
 <div class="sheet-back" id="monthSheet" hidden><div class="sheet-body" id="monthSheetBody" role="dialog" aria-modal="true" aria-label="Month detail"></div></div>
 <div class="sheet-back" id="settingsSheet" hidden><div class="sheet-body" id="settingsSheetBody" role="dialog" aria-modal="true" aria-label="Contract settings"></div></div>
 <div class="sheet-back" id="infoSheet" hidden><div class="sheet-body" id="infoBody" role="dialog" aria-modal="true" aria-label="About this data"></div></div>
@@ -1225,6 +1282,78 @@ function ctCycle(reg, startYM, ctx){
     rand: { exVat, vat: ctRound2(exVat * bill.vatPercent / 100), inclVat: ctRound2(exVat * (1 + bill.vatPercent / 100)) },
   };
 }
+
+// ---- evidence for the printed report ----
+
+// Why a day was (or was not) flyable: hours lost to each factor with the worst reading, and the no-fly periods.
+// crit = { windCaution, windNoFly, ceilCaution, ceilNoFly, visCaution, visNoFly } (the dashboard's limits).
+function ctWeatherDetail(day, histByDate, rule, crit){
+  const start = ctMin(rule.windowStart), end = ctMin(rule.windowEnd);
+  const rows = (histByDate.get(day) || []).filter(r => {
+    const m = ctMin(r.LocalTime.split('T')[1] || '00:00');
+    return m >= start && m < end;
+  }).sort((a, b) => a.LocalTime < b.LocalTime ? -1 : 1);
+  const num = (v) => (v === '' || v === undefined || v === null) ? null : parseFloat(v);
+  const f = { wind: {hours: 0, worst: null}, cloud: {hours: 0, worst: null}, vis: {hours: 0, worst: null}, rain: {hours: 0, worst: null} };
+  let fly = 0, noFly = 0, caution = 0;
+  const spans = [];
+  rows.forEach(r => {
+    const st = r.VerdictSource === 'station';
+    const gust = num(st ? r.St_WindGust_kt : r.Fc_Gust_kt), ceil = num(st ? r.St_CeilingEst_ft : r.Fc_CeilingEst_ft);
+    const vis = num(r.Fc_Visibility_km), precip = (st ? r.St_Precip : r.Fc_Precip) || 'None', rate = st ? num(r.St_RainRate_mm_hr) : null;
+    if(gust !== null && (f.wind.worst === null || gust > f.wind.worst)) f.wind.worst = gust;
+    if(ceil !== null && (f.cloud.worst === null || ceil < f.cloud.worst)) f.cloud.worst = ceil;
+    if(vis !== null && (f.vis.worst === null || vis < f.vis.worst)) f.vis.worst = vis;
+    const rr = rate !== null ? rate : (precip === 'Heavy' ? 7.6 : precip === 'Moderate' ? 2.5 : precip === 'Light' ? 0.1 : 0);
+    if(f.rain.worst === null || rr > f.rain.worst) f.rain.worst = rr;
+    if(r.Verdict === 'NO-FLY'){
+      noFly += 0.5;
+      if(gust !== null && gust > crit.windNoFly) f.wind.hours += 0.5;
+      if(ceil !== null && ceil < crit.ceilNoFly) f.cloud.hours += 0.5;
+      if(vis !== null && vis < crit.visNoFly) f.vis.hours += 0.5;
+      if(precip === 'Moderate' || precip === 'Heavy') f.rain.hours += 0.5;
+      // one logged check stands for the ~30 minutes around it; checks within 45 minutes of each other form one period
+      const t = ctMin(r.LocalTime.split('T')[1].slice(0, 5)), last = spans[spans.length - 1];
+      if(last && t <= last.to + 15){ last.to = Math.max(last.to, t + 30); } else spans.push({from: t, to: t + 30});
+    } else {
+      if(r.Verdict === 'CAUTION') caution += 0.5;
+      fly += (r.Verdict === 'FLYABLE' || (rule.cautionCountsAsFlyable && r.Verdict === 'CAUTION')) ? 0.5 : 0;
+    }
+  });
+  const hm = (m) => { m = Math.round(m / 5) * 5; return ctPad(Math.floor(m / 60)) + ':' + ctPad(m % 60); };
+  const factors = [
+    f.wind.hours > 0 && {key: 'wind', hours: f.wind.hours, worst: f.wind.worst, limit: crit.windNoFly},
+    f.cloud.hours > 0 && {key: 'cloud', hours: f.cloud.hours, worst: f.cloud.worst, limit: crit.ceilNoFly},
+    f.vis.hours > 0 && {key: 'vis', hours: f.vis.hours, worst: f.vis.worst, limit: crit.visNoFly},
+    f.rain.hours > 0 && {key: 'rain', hours: f.rain.hours, worst: f.rain.worst}
+  ].filter(Boolean).sort((a, b) => b.hours - a.hours);
+  return { flyableHours: fly, noFlyHours: noFly, cautionHours: caution, slots: rows.length, factors,
+    spans: spans.map(x => hm(x.from) + '\u2013' + hm(x.to)),
+    peakGust: f.wind.worst, lowestCloud: f.cloud.worst, lowestVis: f.vis.worst, heaviestRain: f.rain.worst };
+}
+
+// Maintenance days inside a cycle, grouped into consecutive ranges with the reason from the grounding log.
+// months = ctCycle(...).months (their day kinds decide which days count, so this always matches the calculation).
+function ctMaintRanges(reg, months, grounding){
+  const days = months.flatMap(m => m.days.filter(d => d.kind === 'maint').map(d => d.date));
+  const rows = (grounding || []).filter(r => r.Registration === reg && r.GroundedDate);
+  const out = []; let cur = null;
+  days.forEach(d => {
+    const prev = cur ? new Date(cur.to + 'T12:00:00Z') : null;
+    if(cur && prev && Math.round((new Date(d + 'T12:00:00Z') - prev) / 86400000) === 1){ cur.to = d; cur.days++; }
+    else { cur = {from: d, to: d, days: 1}; out.push(cur); }
+  });
+  out.forEach(r => {
+    const g = rows.filter(x => x.GroundedDate <= r.from && (!x.UngroundedDate || r.from < x.UngroundedDate || r.from === x.UngroundedDate))
+      .sort((a, b) => a.GroundedDate < b.GroundedDate ? 1 : -1)[0];
+    r.reason = g ? (g.GroundedNote || 'no reason recorded') : 'no matching grounding record';
+    r.back = g ? (g.UngroundedNote || '') : '';
+    r.open = !!g && !g.UngroundedDate;
+    r.groundedFrom = g ? g.GroundedDate : null;
+    r.returned = g ? (g.UngroundedDate || null) : null;
+  });
+  return out;
+}
 // ==== CONTRACT ENGINE END ====
 
 // ===== OWNER LOGIN + CONTRACT TAB (private: data lives on the Worker, behind the password) =====
@@ -1430,7 +1559,7 @@ function renderContract(){
 
   holder.innerHTML = `
     <div class="ct-top"><span class="pill ok">&#128275; unlocked</span>
-      <span><button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
+      <span><button type="button" id="ctPdfBtn" class="primary" aria-label="Create a PDF summary">&#128196; PDF</button> <button type="button" id="ctSettingsBtn" aria-label="Contract settings">&#9881; Settings</button> <button type="button" id="ctLockBtn">Lock</button></span></div>
     <div class="chips">${chips}</div>
     ${dueHtml}
     <div class="ct-timeline" id="ctTimeline">${timelineHtml}</div>
@@ -1473,6 +1602,7 @@ function renderContract(){
   const selGroup = holder.querySelector('#ctTimeline .ct-group.sel'), tl = document.getElementById('ctTimeline');
   if(selGroup && tl) tl.scrollLeft = Math.max(0, selGroup.offsetLeft - (tl.clientWidth - selGroup.offsetWidth) / 2);
   document.getElementById('ctSettingsBtn').addEventListener('click', openSettingsSheet);
+  document.getElementById('ctPdfBtn').addEventListener('click', openPdfSheet);
   holder.querySelectorAll('.ct-card[data-month]').forEach(c => {
     const open = () => openMonthSheet(c.dataset.month);
     c.addEventListener('click', open);
@@ -1586,6 +1716,7 @@ function ctAircraftBlockHtml(reg, a){
   return `<div class="card ct-acblock" data-reg="${reg}">
     <div class="mrow"><b class="mono">${reg}</b><label class="checkline" style="margin:0"><input type="checkbox" data-f="on" ${a.enabled !== false ? 'checked' : ''}> tracked</label></div>
     <div class="field"><label>Description</label><input class="f" data-f="label" type="text" value="${ctEsc(a.label)}" placeholder="aircraft type"></div>
+    <div class="field"><label>Agreement line on the PDF</label><input class="f" data-f="agr" type="text" maxlength="140" value="${ctEsc(a.agreement || '')}" placeholder="e.g. Aircraft Utilization Agreement &middot; Addendum No. 1"></div>
     <div class="form-grid">
       <div class="field"><label>First month of hours tracked (its invoice is issued the month after)</label><input class="f" data-f="start" type="month" value="${ctEsc(a.startMonth)}"></div>
       <div class="field"><label>Cycle length (invoices)</label><input class="f" data-f="len" type="number" step="1" min="1" max="12" value="${a.cycleMonths || 3}"></div>
@@ -1605,6 +1736,11 @@ function openSettingsSheet(){
     <div class="hint" style="margin-top:0">Cycles run invoice to invoice from the first month of hours entered here. For example 2026-10 means the invoice dated 31 October (October hours, prepared in November) starts a cycle: Oct&ndash;Dec hours, then Jan&ndash;Mar, &hellip; A new aircraft just gets its own start month.</div>
     <div id="st_aircraft">${Object.keys(s.aircraft).map(reg => ctAircraftBlockHtml(reg, s.aircraft[reg])).join('')}</div>
     <div class="card"><label for="st_newreg">Add an aircraft</label><div style="display:flex; gap:8px;"><input class="f" id="st_newreg" type="text" placeholder="registration, e.g. ZU-ABC" maxlength="10" style="margin-top:0;"><button type="button" id="st_addac">Add</button></div></div>
+    <div class="section-title">PDF letterhead</div>
+    <div class="form-grid">
+      <div class="field"><label for="st_lessor">Your company (lessor)</label><input id="st_lessor" type="text" maxlength="80" value="${ctEsc(s.report.lessor)}"></div>
+      <div class="field"><label for="st_lessee">Customer (lessee)</label><input id="st_lessee" type="text" maxlength="80" value="${ctEsc(s.report.lessee)}"></div>
+    </div>
     <div class="section-title">Billing estimate</div>
     <div class="form-grid">
       <div class="field"><label for="st_mult">Multiplier on deficit hours (1 = invoiced hours already include tacho &times; 1.2)</label><input id="st_mult" type="number" step="0.01" min="0" value="${s.billing.multiplier}"></div>
@@ -1645,7 +1781,7 @@ function openSettingsSheet(){
     if(body.querySelector('.ct-acblock[data-reg="' + reg + '"]')){ msg.textContent = reg + ' is already listed.'; return; }
     const start = localNow().dateStr.slice(0, 7);
     document.getElementById('st_aircraft').insertAdjacentHTML('beforeend',
-      ctAircraftBlockHtml(reg, {label: '', startMonth: start, cycleMonths: 3, baselineHours: 40, rates: [{from: start + '-01', perHour: 1800}], enabled: true}));
+      ctAircraftBlockHtml(reg, {label: '', agreement: '', startMonth: start, cycleMonths: 3, baselineHours: 40, rates: [{from: start + '-01', perHour: 1800}], enabled: true}));
     wireBlock(body.querySelector('.ct-acblock[data-reg="' + reg + '"]'));
     document.getElementById('st_newreg').value = ''; msg.textContent = reg + ' added \u2014 set its start month and rate, then Save.';
   });
@@ -1656,6 +1792,7 @@ function openSettingsSheet(){
     body.querySelectorAll('.ct-acblock').forEach(blk => {
       aircraft[blk.dataset.reg] = {
         label: blk.querySelector('[data-f=label]').value,
+        agreement: blk.querySelector('[data-f=agr]').value,
         startMonth: blk.querySelector('[data-f=start]').value,
         cycleMonths: blk.querySelector('[data-f=len]').value,
         baselineHours: blk.querySelector('[data-f=base]').value,
@@ -1668,6 +1805,7 @@ function openSettingsSheet(){
       weatherRule: {enabled: document.getElementById('st_wen').checked, windowStart: document.getElementById('st_ws').value, windowEnd: document.getElementById('st_we').value,
         minFlyableHours: document.getElementById('st_min').value, cautionCountsAsFlyable: document.getElementById('st_caut').checked},
       releaseDayCountsAsUnavailable: document.getElementById('st_rel').checked,
+      report: {lessor: document.getElementById('st_lessor').value, lessee: document.getElementById('st_lessee').value},
       aircraft: aircraft
     };
     msg.textContent = 'saving\u2026';
@@ -1703,6 +1841,292 @@ function wireOwnerUnlock(){
     }
     btn.disabled = false;
   });
+}
+
+// ===== PRINTABLE REPORT (a PDF through the browser's print dialog) =====
+// One report per aircraft (2 pages: summary + supporting detail) or a fleet report (summary + one detail page per aircraft).
+// Each aircraft is reported on its OWN cycle. The report is always light-themed and A4.
+const RC = {ok: '#62c795', maint: '#d9534f', weather: '#e8a923', good: '#1f9d63', bad: '#d4453b', ink: '#17212b', mut: '#5d6b7a', line: '#d8e0e8'};
+const rptMon = (ym) => new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'long', timeZone: 'UTC'});
+const rptMonS = (ym) => new Date(ym + '-01T12:00:00Z').toLocaleDateString('en-GB', {month: 'short', timeZone: 'UTC'});
+const rptSgn = (n) => (n >= 0 ? '+' : '−') + ctFmt(Math.abs(n));
+const rptDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'});
+function rptRange(a, b){
+  const da = new Date(a + 'T12:00:00Z'), db = new Date(b + 'T12:00:00Z');
+  const m = (d) => d.toLocaleDateString('en-GB', {month: 'short', timeZone: 'UTC'});
+  if(a === b) return da.getUTCDate() + ' ' + m(da);
+  return da.getUTCMonth() === db.getUTCMonth() ? da.getUTCDate() + '–' + db.getUTCDate() + ' ' + m(db) : da.getUTCDate() + ' ' + m(da) + ' – ' + db.getUTCDate() + ' ' + m(db);
+}
+function rptCycleLabel(startYM, len){ return rptMonS(startYM) + '–' + rptMonS(ctAddMonths(startYM, len - 1)) + ' ' + ctAddMonths(startYM, len - 1).slice(0, 4); }
+function rptCycleLong(startYM, len){ return rptMon(startYM) + ' – ' + rptMon(ctAddMonths(startYM, len - 1)) + ' ' + ctAddMonths(startYM, len - 1).slice(0, 4); }
+
+// Gather everything one aircraft's report needs.
+function rptCollect(reg, startYM, ctx){
+  const s = ctx.settings, ac = s.aircraft[reg], cy = ctCycle(reg, startYM, ctx);
+  const wx = [], adj = [], daily = [];
+  cy.months.forEach(m => m.days.forEach(d => {
+    if(d.kind === 'weather') wx.push(Object.assign({date: d.date}, ctWeatherDetail(d.date, ctx.histByDate, s.weatherRule, CRIT)));
+    if(d.kind === 'forced-off' || d.kind === 'forced-on') adj.push({date: d.date, kind: d.kind});
+    const w = ctWeatherDay(d.date, ctx.histByDate, s.weatherRule, ctx.todayStr, ctx.nowMin);
+    daily.push({date: d.date, kind: d.kind, hrs: w.flyableHours !== undefined ? w.flyableHours : null});
+  }));
+  return {reg, ac, cy, len: ac.cycleMonths || 3, maint: ctMaintRanges(reg, cy.months, ctx.grounding), wx, adj, daily,
+    s, lessor: s.report.lessor, lessee: s.report.lessee, prepared: new Date().toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ})};
+}
+
+// ----- charts (inline SVG, so they stay sharp in the PDF) -----
+function rptBarsSvg(months, w, h){
+  const pad = {l: 30, r: 6, t: 16, b: 30}, iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const vals = months.flatMap(m => [m.baseline, m.counted === null ? 0 : m.counted]);
+  const max = Math.max(20, Math.ceil(Math.max(...vals) / 10) * 10 + 5);
+  const y = (v) => pad.t + ih - (v / max) * ih;
+  let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  for(let g = 0; g <= max; g += 10) s += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" stroke="${RC.line}"/><text x="${pad.l - 4}" y="${y(g) + 3}" font-size="8.5" fill="${RC.mut}" text-anchor="end">${g}</text>`;
+  const gw = iw / months.length;
+  months.forEach((m, i) => {
+    const cx = pad.l + gw * i + gw / 2, bw = Math.min(30, gw / 3);
+    s += `<rect x="${cx - bw - 2}" y="${y(m.baseline)}" width="${bw}" height="${y(0) - y(m.baseline)}" fill="#fff" stroke="#8a97a5" stroke-width="1.3" stroke-dasharray="3 2"/><text x="${cx - bw / 2 - 2}" y="${y(m.baseline) - 3}" font-size="8.5" text-anchor="middle" fill="${RC.mut}">${ctFmt(m.baseline)}</text>`;
+    if(m.counted !== null){
+      const col = m.counted >= m.baseline ? RC.good : RC.bad;
+      s += `<rect x="${cx + 2}" y="${y(m.counted)}" width="${bw}" height="${y(0) - y(m.counted)}" fill="${col}" rx="1.5"/><text x="${cx + bw / 2 + 2}" y="${y(m.counted) - 3}" font-size="9" font-weight="700" text-anchor="middle" fill="${col}">${ctFmt(m.counted)}</text>`;
+    } else s += `<text x="${cx + bw / 2 + 2}" y="${y(0) - 5}" font-size="8.5" text-anchor="middle" fill="${RC.mut}">no hours</text>`;
+    s += `<text x="${cx}" y="${h - 16}" font-size="9.5" font-weight="600" text-anchor="middle" fill="${RC.ink}">${rptMonS(m.ym)}</text>`;
+    if(m.balanceAfter !== null) s += `<text x="${cx}" y="${h - 5}" font-size="8.5" text-anchor="middle" fill="${m.balanceAfter >= 0 ? RC.good : RC.bad}">balance ${rptSgn(m.balanceAfter)}</text>`;
+  });
+  return s + '</svg>';
+}
+function rptWaterfallSvg(months, w, h){
+  const pad = {l: 8, r: 8, t: 18, b: 30}; let bal = 0;
+  const steps = months.filter(m => m.diff !== null).map(m => { const from = bal; bal = m.balanceAfter; return {m, from, to: bal}; });
+  if(steps.length === 0) return `<div class="rpt-note" style="padding:60px 0;text-align:center">Hours have not been entered yet.</div>`;
+  const all = steps.flatMap(x => [x.from, x.to, 0]), lo = Math.min(...all) - 1.5, hi = Math.max(...all) + 1.5;
+  const y = (v) => pad.t + (hi - v) / (hi - lo) * (h - pad.t - pad.b), gw = (w - pad.l - pad.r) / months.length, bw = Math.min(52, gw - 14);
+  let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><line x1="${pad.l}" x2="${w - pad.r}" y1="${y(0)}" y2="${y(0)}" stroke="#8a97a5" stroke-dasharray="3 2"/><text x="${w - pad.r}" y="${y(0) - 3}" font-size="8" fill="${RC.mut}" text-anchor="end">on target</text>`;
+  months.forEach((m, i) => {
+    const st = steps.find(x => x.m === m); const cx = pad.l + gw * i + gw / 2;
+    if(!st){ s += `<text x="${cx}" y="${h - 16}" font-size="9.5" font-weight="600" text-anchor="middle" fill="${RC.ink}">${rptMonS(m.ym)}</text>`; return; }
+    const up = st.to >= st.from, top = Math.min(y(st.from), y(st.to)), hh = Math.abs(y(st.from) - y(st.to));
+    s += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${Math.max(2, hh)}" fill="${up ? RC.good : RC.bad}" rx="2"/><text x="${cx}" y="${top - 4}" font-size="9" font-weight="700" text-anchor="middle" fill="${up ? RC.good : RC.bad}">${rptSgn(m.diff)}</text>`;
+    s += `<text x="${cx}" y="${h - 16}" font-size="9.5" font-weight="600" text-anchor="middle" fill="${RC.ink}">${rptMonS(m.ym)}</text><text x="${cx}" y="${h - 5}" font-size="8.5" text-anchor="middle" fill="${st.to >= 0 ? RC.good : RC.bad}">balance ${rptSgn(st.to)}</text>`;
+  });
+  return s + '</svg>';
+}
+function rptStripsSvg(months, w, cell){
+  cell = cell || 17; const gap = 2, lw = 40, rowh = cell + 7, live = months.filter(m => m.days.length), h = live.length * rowh + 4;
+  let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  live.forEach((m, r) => {
+    const y0 = r * rowh + 2; s += `<text x="0" y="${y0 + cell * 0.72}" font-size="9.5" font-weight="600" fill="${RC.ink}">${rptMonS(m.ym)}</text>`;
+    m.days.forEach((d, i) => {
+      const col = (d.kind === 'maint') ? RC.maint : (d.kind === 'weather' ? RC.weather : (d.kind === 'forced-off' ? '#9b59b6' : RC.ok));
+      s += `<rect x="${lw + i * (cell + gap)}" y="${y0}" width="${cell}" height="${cell + 1}" rx="2.5" fill="${col}"${d.kind === 'future' || d.kind === 'pending' ? ' opacity=".35"' : ''}/>`;
+      if(cell >= 14) s += `<text x="${lw + i * (cell + gap) + cell / 2}" y="${y0 + cell * 0.7}" font-size="7.5" text-anchor="middle" fill="${d.kind === 'ok' || d.kind === 'forced-on' ? '#0c3b26' : '#fff'}" font-weight="600">${i + 1}</text>`;
+    });
+  });
+  return s + '</svg>';
+}
+function rptDailySvg(daily, months, w, h){
+  const pad = {l: 26, r: 4, t: 12, b: 20}, iw = w - pad.l - pad.r, ih = h - pad.t - pad.b, bw = iw / daily.length;
+  const y = (v) => pad.t + ih - v / 11 * ih; let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  [0, 4, 8, 11].forEach(g => s += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" stroke="${g === 4 ? RC.bad : RC.line}"${g === 4 ? ' stroke-dasharray="4 3"' : ''}/><text x="${pad.l - 4}" y="${y(g) + 3}" font-size="8" fill="${g === 4 ? RC.bad : RC.mut}" text-anchor="end">${g}</text>`);
+  daily.forEach((d, i) => { const x = pad.l + i * bw;
+    if(d.kind === 'maint') s += `<rect x="${x}" y="${pad.t}" width="${Math.max(0.5, bw - 0.8)}" height="${ih}" fill="#f6d9d7"/>`;
+    else if(d.hrs !== null) s += `<rect x="${x}" y="${y(d.hrs)}" width="${Math.max(0.5, bw - 0.8)}" height="${Math.max(0.5, y(0) - y(d.hrs))}" fill="${d.kind === 'weather' ? RC.weather : RC.ok}"/>`; });
+  let x0 = 0; months.filter(m => m.days.length).forEach(m => { const n = m.days.length; s += `<line x1="${pad.l + x0 * bw}" x2="${pad.l + x0 * bw}" y1="${pad.t}" y2="${h - pad.b + 4}" stroke="#aab4bf"/><text x="${pad.l + (x0 + n / 2) * bw}" y="${h - 5}" font-size="9.5" font-weight="600" text-anchor="middle" fill="${RC.ink}">${rptMon(m.ym)}</text>`; x0 += n; });
+  return s + `<text x="${w - pad.r}" y="${y(4) - 3}" font-size="8" fill="${RC.bad}" text-anchor="end">4-hour line</text></svg>`;
+}
+const rptLegend = () => `<div class="rpt-leg"><span><i style="background:${RC.ok}"></i>available</span><span><i style="background:${RC.maint}"></i>maintenance</span><span><i style="background:${RC.weather}"></i>weather (non-flying)</span><span><i style="background:#9b59b6"></i>added by VMC</span></div>`;
+
+// ----- page furniture -----
+function rptHead(d, title, right){
+  const prov = d.cy.state !== 'final' ? `<span class="rpt-prov">PROVISIONAL</span>` : '';
+  return `<div class="rpt-hd"><div><div class="rpt-co">${rptEsc(d.lessor)}</div><h1>${title}</h1></div><div class="rpt-r">${right}${prov}</div></div>`;
+}
+function rptFoot(d, page, of){
+  return `<div class="rpt-ft"><span>Prepared ${d.prepared}. Weather comes from the FASX Swellendam Flyability Dashboard's logged checks (a reference for guidance only).</span><span>Page ${page} of ${of}</span></div>`;
+}
+function rptEsc(s){ return escapeAttr(s == null ? '' : s); }
+function rptAcRight(d){ return `<b>${d.reg}</b> &middot; ${rptEsc(d.ac.label)}<br>Cycle: ${rptCycleLong(d.cy.startYM, d.len)} hours<br>Prepared ${d.prepared}`; }
+
+function rptMonthTable(d){
+  const cy = d.cy;
+  const rows = cy.months.map(m => {
+    if(m.status === 'na') return `<tr><td><b>${rptMon(m.ym)}</b><small>not in effect</small></td><td colspan="7" style="text-align:left;color:${RC.mut}">Before this aircraft's contract tracking starts.</td></tr>`;
+    const parts = [`${m.total} days`]; if(m.counts.maint) parts.push(`− ${m.counts.maint} maintenance`); if(m.counts.weather) parts.push(`− ${m.counts.weather} weather`);
+    if(m.counts.forcedOff) parts.push(`− ${m.counts.forcedOff} added`); if(m.counts.forcedOn) parts.push(`+ ${m.counts.forcedOn} released`);
+    const has = m.counted !== null;
+    return `<tr><td><b>${rptMon(m.ym)}</b><small>${parts.join(' ')} &middot; invoice dated ${ctInvoiceDate(m.ym)}</small></td><td>${m.available}</td><td>${ctFmt(m.baseline)}</td>
+      <td>${has ? ctFmt(m.invoice.invoicedHours) : '—'}</td><td>${has ? ctFmt(m.invoice.ownerHours || 0) : '—'}</td><td>${has ? '<b>' + ctFmt(m.counted) + '</b>' : '—'}</td>
+      <td class="${has ? (m.diff >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.diff) : '—'}</td><td class="${has ? (m.balanceAfter >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.balanceAfter) : '—'}</td></tr>`;
+  }).join('');
+  const tr = cy.months.filter(m => m.status !== 'na'), entered = tr.filter(m => m.counted !== null);
+  const sum = (a, f) => a.reduce((x, m) => x + f(m), 0);
+  return `<table class="rpt-t"><thead><tr><th>Hours month</th><th>Available<br>days</th><th>Guaranteed<br>hours</th><th>Invoiced<br>hours</th><th>Owner<br>flying</th><th>Counted<br>hours</th><th>Surplus /<br>(short)</th><th>Running<br>balance</th></tr></thead><tbody>${rows}
+    <tr class="tot"><td>Cycle total</td><td>${sum(tr, m => m.available)}</td><td>${ctFmt(sum(tr, m => m.baseline))}</td><td>${ctFmt(sum(entered, m => m.invoice.invoicedHours))}</td><td>${ctFmt(sum(entered, m => m.invoice.ownerHours || 0))}</td><td>${ctFmt(sum(entered, m => m.counted))}</td>
+    <td class="${entered.length ? (cy.balance >= 0 ? 'pos' : 'neg') : ''}">${entered.length ? rptSgn(cy.balance) : '—'}</td><td></td></tr></tbody></table>`;
+}
+
+function rptKpis(d){
+  const cy = d.cy, tr = cy.months.filter(m => m.status !== 'na'), entered = tr.filter(m => m.counted !== null), final = cy.state === 'final';
+  const guar = tr.reduce((a, m) => a + m.baseline, 0), counted = entered.reduce((a, m) => a + m.counted, 0);
+  const short = cy.balance < 0, none = entered.length === 0;
+  const result = none ? '—' : (short ? ctFmt(cy.deficit) + ' h short' : ctFmt(cy.credit) + ' h surplus');
+  const resSub = none ? 'no hours entered yet' : (final ? (short ? 'shortfall is billed' : 'surplus lapses at cycle end') : 'so far, cycle not finished');
+  const bill = final ? (cy.deficit > 0 ? rptRandFmt(cy.rand.exVat) : 'None') : '—';
+  const billSub = final ? (cy.deficit > 0 ? `excl. VAT · ${ctFmt(cy.deficit)} h × R${cy.perHour.toLocaleString('en-ZA')}${d.s.billing.multiplier !== 1 ? ' × ' + d.s.billing.multiplier : ''}` : 'no deficit at cycle end') : 'once the cycle is finished';
+  return `<div class="rpt-kpis">
+    <div class="rpt-k"><div class="l">Guaranteed hours</div><div class="v">${ctFmt(guar)} h</div><div class="s">${tr.length} × ${d.ac.baselineHours} h, adjusted for unavailable days</div></div>
+    <div class="rpt-k"><div class="l">Hours counted</div><div class="v">${ctFmt(counted)} h</div><div class="s">invoiced less owner flying${entered.length < tr.length ? ` (${entered.length} of ${tr.length} months)` : ''}</div></div>
+    <div class="rpt-k ${none ? '' : (short ? 'bad' : 'good')}"><div class="l">Cycle result</div><div class="v">${result}</div><div class="s">${resSub}</div></div>
+    <div class="rpt-k ${final && cy.deficit > 0 ? 'bad' : ''}"><div class="l">Billable at cycle end</div><div class="v">${bill}</div><div class="s">${billSub}</div></div></div>`;
+}
+function rptRandFmt(n){ return 'R' + Math.round(n).toLocaleString('en-ZA').replace(/ /g, ' '); }
+
+// ----- why a weather day was not flyable -----
+function rptWhy(w){
+  const L = [];
+  w.factors.forEach(f => {
+    if(f.key === 'wind') L.push(`<b>Strong gusts</b> above ${f.limit} kt for ${ctFmt(f.hours)} h (peak ${Math.round(f.worst)} kt)`);
+    if(f.key === 'cloud') L.push(`<b>Low cloud base</b> below ${f.limit.toLocaleString('en-ZA').replace(/ /g, ' ')} ft for ${ctFmt(f.hours)} h (lowest ${Math.round(f.worst).toLocaleString('en-ZA').replace(/ /g, ' ')} ft)`);
+    if(f.key === 'vis') L.push(`<b>Poor visibility</b> below ${f.limit} km for ${ctFmt(f.hours)} h (lowest ${ctFmt(f.worst)} km)`);
+    if(f.key === 'rain') L.push(`<b>Rain</b> moderate or heavier for ${ctFmt(f.hours)} h (up to ${f.worst.toFixed(1)} mm/h)`);
+  });
+  if(!L.length) L.push(w.slots === 0 ? 'No logged checks that day' : 'Conditions were marginal (caution) for most of the day');
+  return L.map(x => `<div>${x}</div>`).join('');
+}
+
+// ----- the pages -----
+function rptPageSummary(d, page, of){
+  const cy = d.cy;
+  return `<section class="rpt-page">${rptHead(d, 'Aircraft utilisation summary', rptAcRight(d))}
+   <div class="rpt-body"><div class="rpt-ref"><span><b>${rptEsc(d.ac.agreement || 'Aircraft Utilization Agreement')}</b></span><span>Lessee: <b>${rptEsc(d.lessee)}</b></span></div>
+   ${rptKpis(d)}
+   <h2>Month by month</h2>${rptMonthTable(d)}
+   <div class="rpt-two"><div><h2>Hours against guarantee</h2><div class="rpt-card">${rptBarsSvg(cy.months.filter(m => m.status !== 'na'), 330, 168)}<div class="rpt-leg"><span><i style="border:1.3px dashed #8a97a5;background:#fff"></i>guaranteed</span><span><i style="background:${RC.good}"></i>counted (met)</span><span><i style="background:${RC.bad}"></i>counted (short)</span></div></div></div>
+    <div><h2>How the result builds up</h2><div class="rpt-card">${rptWaterfallSvg(cy.months.filter(m => m.status !== 'na'), 330, 168)}<div class="rpt-leg"><span><i style="background:${RC.good}"></i>surplus added</span><span><i style="background:${RC.bad}"></i>shortfall</span></div></div></div></div>
+   <h2>Every day of the cycle</h2><div class="rpt-card">${rptStripsSvg(cy.months, 726)}${rptLegend()}</div>
+   <div class="rpt-note" style="margin-top:9px"><b>Method.</b> Guaranteed hours for a month = ${d.ac.baselineHours} × available days ÷ days in the month, rounded down to 0.1 h. Surplus hours carry into the next month of the cycle; a shortfall left after the last month is billed. A day counts once even if both maintenance and weather apply. Owner flying is excluded from the counted hours.</div></div>
+   ${rptFoot(d, page, of)}</section>`;
+}
+function rptPageDetail(d, page, of){
+  const cy = d.cy, mTotal = d.maint.reduce((a, r) => a + r.days, 0);
+  const maintRows = d.maint.map(r => {
+    const status = r.open ? `still grounded at the end of the period` : (r.back ? `returned ${rptRange(r.returned, r.returned)}: ${rptEsc(r.back)}` : `returned ${r.returned ? rptRange(r.returned, r.returned) : ''}`);
+    const outside = (r.groundedFrom && r.groundedFrom < r.from) ? ` <span class="rpt-note">(grounded since ${rptRange(r.groundedFrom, r.groundedFrom)})</span>` : '';
+    return `<tr><td>${rptRange(r.from, r.to)}</td><td>${r.days}</td><td style="text-align:left"><b>${rptEsc(r.reason)}</b>${outside}</td><td style="text-align:left">${status}</td></tr>`;
+  }).join('');
+  const wxRows = d.wx.map(w => `<tr><td>${rptDay(w.date)}</td><td>${ctFmt(w.flyableHours)} / ${Math.round((ctMin(d.s.weatherRule.windowEnd) - ctMin(d.s.weatherRule.windowStart)) / 60)} h</td><td style="text-align:left">${rptWhy(w)}</td><td style="text-align:left">${w.spans.length ? w.spans.join(', ') : '—'}</td></tr>`).join('');
+  const adjRows = d.adj.map(a => `<tr><td>${rptDay(a.date)}</td><td style="text-align:left">${a.kind === 'forced-off' ? 'Counted as unavailable by VMC' : 'Released by VMC (counted as available)'}</td></tr>`).join('');
+  return `<section class="rpt-page">${rptHead(d, 'Supporting detail: unavailable days', rptAcRight(d))}
+   <div class="rpt-body">
+   <h2 style="margin-top:2px">Maintenance days — from the aircraft's grounding log (${mTotal} day${mTotal === 1 ? '' : 's'})</h2>
+   ${d.maint.length ? `<table class="rpt-t"><thead><tr><th>Dates</th><th>Days</th><th style="text-align:left">Reason grounded</th><th style="text-align:left">Returned to service</th></tr></thead><tbody>${maintRows}</tbody></table>` : `<div class="rpt-note">No maintenance days in this cycle.</div>`}
+   <h2>Flyable hours per day, ${d.s.weatherRule.windowStart}–${d.s.weatherRule.windowEnd} (weather days fall below the ${d.s.weatherRule.minFlyableHours}-hour line)</h2>
+   <div class="rpt-card">${rptDailySvg(d.daily, cy.months, 726, 112)}<div class="rpt-leg"><span><i style="background:${RC.ok}"></i>flyable day</span><span><i style="background:${RC.weather}"></i>weather day</span><span><i style="background:#f6d9d7"></i>aircraft in maintenance</span></div></div>
+   <h2>Weather days — why each was not flyable (${d.wx.length} day${d.wx.length === 1 ? '' : 's'})</h2>
+   ${d.wx.length ? `<table class="rpt-t rpt-wx"><colgroup><col style="width:12%"><col style="width:11%"><col style="width:52%"><col style="width:25%"></colgroup><thead><tr><th>Day</th><th>Flyable<br>hours</th><th style="text-align:left">What stopped flying (limits: gusts ${CRIT.windNoFly} kt, cloud ${CRIT.ceilNoFly.toLocaleString('en-ZA').replace(/ /g, ' ')} ft, visibility ${CRIT.visNoFly} km)</th><th style="text-align:left">No-fly periods</th></tr></thead><tbody>${wxRows}</tbody></table>` : `<div class="rpt-note">No weather days in this cycle.</div>`}
+   ${d.adj.length ? `<h2>Days adjusted by VMC</h2><table class="rpt-t"><tbody>${adjRows}</tbody></table>` : ''}
+   <div class="rpt-card rpt-confirm"><div style="font-weight:700;margin-bottom:4px">For ${rptEsc(d.lessee)} to confirm</div>
+    <div class="rpt-chk"><i></i><span>We agree with the maintenance and weather days listed above for ${d.reg}.</span></div>
+    <div class="rpt-chk"><i></i><span>We dispute these days (please list them with the cancelled bookings): ________________________________________</span></div>
+    <div class="rpt-sig"><div>For ${rptEsc(d.lessee)} · name, signature, date</div><div>For ${rptEsc(d.lessor)} · name, signature, date</div></div></div></div>
+   ${rptFoot(d, page, of)}</section>`;
+}
+function rptPageFleet(list, page, of){
+  const lessor = list[0].lessor, prepared = list[0].prepared;
+  const all = list.map(d => { const tr = d.cy.months.filter(m => m.status !== 'na'); return {d, guar: tr.reduce((a, m) => a + m.baseline, 0), counted: tr.filter(m => m.counted !== null).reduce((a, m) => a + m.counted, 0)}; });
+  const guar = all.reduce((a, x) => a + x.guar, 0), counted = all.reduce((a, x) => a + x.counted, 0);
+  const finals = list.filter(d => d.cy.state === 'final'), bill = finals.reduce((a, d) => a + d.cy.rand.exVat, 0), billH = finals.reduce((a, d) => a + d.cy.deficit, 0);
+  const allFinal = finals.length === list.length;
+  const card = (d) => { const cy = d.cy, none = cy.months.every(m => m.counted === null), short = cy.balance < 0;
+    return `<div class="rpt-card"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">${d.reg}</b><span class="rpt-note">${rptEsc(d.ac.label)}</span></div>
+      <div class="rpt-note" style="margin:1px 0 3px">Cycle ${rptCycleLong(cy.startYM, d.len)} hours</div>
+      <div style="margin:2px 0 4px"><span class="rpt-pill ${none ? '' : (short ? 'm' : 'g')}">${none ? 'no hours entered yet' : (short ? ctFmt(cy.deficit) + ' h short' + (cy.state === 'final' ? ' — ' + rptRandFmt(cy.rand.exVat) + ' excl. VAT' : ' so far') : ctFmt(cy.credit) + ' h surplus' + (cy.state === 'final' ? ' — lapses at cycle end' : ' so far'))}</span></div>
+      ${rptBarsSvg(cy.months.filter(m => m.status !== 'na'), 340, 150)}</div>`; };
+  const rows = list.flatMap(d => d.cy.months.filter(m => m.status !== 'na').map((m, i) => { const has = m.counted !== null;
+    return `<tr><td>${i === 0 ? '<b>' + d.reg + '</b>' : ''}</td><td style="text-align:left">${rptMon(m.ym)}</td><td>${m.available}/${m.total}</td><td>${ctFmt(m.baseline)}</td><td>${has ? ctFmt(m.counted) : '—'}</td><td class="${has ? (m.diff >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.diff) : '—'}</td><td class="${has ? (m.balanceAfter >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.balanceAfter) : '—'}</td></tr>`; })
+    .concat(`<tr class="tot"><td></td><td style="text-align:left">${d.reg} cycle</td><td></td><td>${ctFmt(d.cy.months.filter(m => m.status !== 'na').reduce((a, m) => a + m.baseline, 0))}</td><td>${ctFmt(d.cy.months.filter(m => m.counted !== null).reduce((a, m) => a + m.counted, 0))}</td><td class="${d.cy.balance >= 0 ? 'pos' : 'neg'}">${rptSgn(d.cy.balance)}</td><td>${d.cy.state === 'final' ? (d.cy.deficit > 0 ? 'billable ' + ctFmt(d.cy.deficit) + ' h' : 'surplus lapses') : 'provisional'}</td></tr>`)).join('');
+  const heat = list.map(d => `<div style="margin-bottom:5px"><div class="rpt-note" style="margin-bottom:1px"><b>${d.reg}</b> · ${rptCycleLong(d.cy.startYM, d.len)} hours</div>${rptStripsSvg(d.cy.months, 726, 9)}</div>`).join('');
+  return `<section class="rpt-page"><div class="rpt-hd"><div><div class="rpt-co">${rptEsc(lessor)}</div><h1>Fleet utilisation summary</h1></div><div class="rpt-r"><b>${list.map(d => d.reg).join(' · ')}</b><br>Each aircraft on its own contract cycle<br>Prepared ${prepared}${allFinal ? '' : '<span class="rpt-prov">PROVISIONAL</span>'}</div></div>
+   <div class="rpt-body"><div class="rpt-ref"><span>Aircraft Utilization Agreements and Addenda with <b>${rptEsc(list[0].lessee)}</b></span><span>${list.length} aircraft</span></div>
+   <div class="rpt-kpis"><div class="rpt-k"><div class="l">Fleet guaranteed hours</div><div class="v">${ctFmt(guar)} h</div><div class="s">sum of each aircraft's own cycle</div></div>
+    <div class="rpt-k"><div class="l">Fleet hours counted</div><div class="v">${ctFmt(counted)} h</div><div class="s">${all.every(x => x.d.cy.months.every(m => m.counted !== null || m.status === 'na')) ? 'all months entered' : 'some months not entered yet'}</div></div>
+    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">Billable deficit</div><div class="v">${allFinal ? ctFmt(billH) + ' h' : '—'}</div><div class="s">${allFinal ? (billH > 0 ? finals.filter(d => d.cy.deficit > 0).map(d => d.reg).join(', ') : 'none') : 'cycles still open'}</div></div>
+    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">To add to invoices</div><div class="v">${allFinal ? rptRandFmt(bill) : '—'}</div><div class="s">${allFinal ? 'excl. VAT · ' + rptRandFmt(bill * (1 + list[0].s.billing.vatPercent / 100)) + ' incl.' : 'once cycles are finished'}</div></div></div>
+   <div class="rpt-note" style="margin:-4px 0 9px">Each aircraft is measured on its own contract and cycle, so one aircraft's surplus never offsets another's shortfall.</div>
+   <div class="rpt-two">${list.map(card).join('')}</div>
+   <h2>Which days each aircraft was available</h2><div class="rpt-card">${heat}${rptLegend()}</div>
+   <h2>Working</h2><table class="rpt-t" style="font-size:9.5px"><thead><tr><th></th><th style="text-align:left">Month</th><th>Avail.<br>days</th><th>Guar.</th><th>Counted</th><th>+/−</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="rpt-ft"><span>Prepared ${prepared}. The following pages give the maintenance and weather detail for each aircraft.</span><span>Page ${page} of ${of}</span></div></section>`;
+}
+function rptBuildAircraft(reg, startYM, ctx){ const d = rptCollect(reg, startYM, ctx); return {title: reg + ' utilisation ' + rptCycleLabel(startYM, d.len), html: rptPageSummary(d, 1, 2) + rptPageDetail(d, 2, 2)}; }
+function rptBuildFleet(picks, ctx){
+  const list = picks.map(p => rptCollect(p.reg, p.startYM, ctx)), of = 1 + list.length;
+  return {title: 'Fleet utilisation summary', html: rptPageFleet(list, 1, of) + list.map((d, i) => rptPageDetail(d, i + 2, of)).join('')};
+}
+
+// ----- dialog + preview/print -----
+function rptCycleOptions(reg, ctx){
+  const ac = ownerData.settings.aircraft[reg], len = ac.cycleMonths || 3, todayYM = ctx.todayStr.slice(0, 7);
+  const cur = todayYM < ac.startMonth ? ac.startMonth : ctCycleStart(todayYM, ac.startMonth, len);
+  const out = [];
+  for(let y = ac.startMonth; y <= cur; y = ctAddMonths(y, len)){
+    const cy = ctCycle(reg, y, ctx);
+    out.push({startYM: y, label: rptCycleLong(y, len) + ' hours' + (cy.state === 'final' ? '' : (cy.months.every(m => m.status === 'closed' || m.status === 'na') ? ' · hours needed' : ' · in progress'))});
+  }
+  return out;
+}
+function rptDefaultCycle(reg, ctx){
+  const ac = ownerData.settings.aircraft[reg], len = ac.cycleMonths || 3, todayYM = ctx.todayStr.slice(0, 7);
+  // What you are looking at, unless that cycle has no finished month yet (e.g. a cycle that has just started):
+  // then the cycle of the most recently finished month, which is the one being invoiced.
+  if(reg === ctAc && ctCycleYM && ctCycleYM >= ac.startMonth && ctCycle(reg, ctCycleYM, ctx).months.some(m => m.status === 'closed')) return ctCycleYM;
+  const lastClosed = ctAddMonths(todayYM, -1);
+  return lastClosed < ac.startMonth ? ac.startMonth : ctCycleStart(lastClosed, ac.startMonth, len);
+}
+function openPdfSheet(){
+  const ctx = ctBuildCtx(), s = ownerData.settings;
+  const regs = Object.keys(s.aircraft).filter(r => s.aircraft[r].enabled !== false);
+  const body = document.getElementById('pdfSheetBody');
+  body.innerHTML = `
+    <div class="sheet-head"><b>Create PDF</b><button type="button" class="sheet-x" data-close aria-label="Close">&#10005;</button></div>
+    <div class="field"><label>What to include</label>
+      <label class="checkline" style="margin:4px 0;"><input type="radio" name="pdfScope" value="one" checked> One aircraft: <b>${ctAc}</b> (2 pages)</label>
+      <label class="checkline" style="margin:4px 0;"><input type="radio" name="pdfScope" value="all"> All aircraft (a summary page, then one detail page per aircraft)</label></div>
+    <div class="section-title" style="margin-top:14px;">Cycle for each aircraft</div>
+    ${regs.map(r => { const opts = rptCycleOptions(r, ctx), def = rptDefaultCycle(r, ctx);
+      return `<div class="field" data-pdfreg="${r}" style="margin-bottom:8px;"><label>${r} <span class="ct-dim">(its own cycle)</span></label><select class="f" style="margin-top:2px;">${opts.map(o => `<option value="${o.startYM}"${o.startYM === def ? ' selected' : ''}>${o.label}</option>`).join('')}</select></div>`; }).join('')}
+    <button type="button" id="pdfGo" class="primary" style="width:100%; margin-top:10px; padding:12px;">Preview &amp; print</button>
+    <div class="hint">A preview opens. Tap <b>Print / Save as PDF</b> and choose &ldquo;Save as PDF&rdquo; as the printer. Hours that haven't been entered show as &mdash; and the report is marked PROVISIONAL.</div>`;
+  document.getElementById('pdfGo').addEventListener('click', () => {
+    const scope = body.querySelector('input[name="pdfScope"]:checked').value;
+    const pick = (r) => ({reg: r, startYM: body.querySelector(`[data-pdfreg="${r}"] select`).value});
+    const rep = scope === 'one' ? rptBuildAircraft(ctAc, pick(ctAc).startYM, ctx) : rptBuildFleet(regs.map(pick), ctx);
+    closeSheets(); openReport(rep);
+  });
+  openSheet('pdfSheet');
+}
+function rptFit(){
+  const pages = document.getElementById('rptPages'); if(!pages) return;
+  pages.style.zoom = String(Math.min(1, (window.innerWidth - 16) / 794));
+}
+function openReport(rep){
+  document.getElementById('rptPages').innerHTML = rep.html;
+  document.getElementById('rptTitle').textContent = rep.title;
+  document.getElementById('reportOverlay').classList.add('on');
+  document.body.classList.add('rpt-open');
+  document.getElementById('rptScroll').scrollTop = 0;
+  rptFit();
+}
+function closeReport(){
+  document.getElementById('reportOverlay').classList.remove('on');
+  document.body.classList.remove('rpt-open');
+  document.getElementById('rptPages').innerHTML = '';
+}
+function wireReport(){
+  document.getElementById('rptClose').addEventListener('click', closeReport);
+  document.getElementById('rptPrint').addEventListener('click', () => window.print());
+  window.addEventListener('resize', rptFit);
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && document.body.classList.contains('rpt-open')) closeReport(); });
 }
 
 // ===== UI state & helpers (tabs, sheets, plan, calendar) =====
@@ -2593,6 +3017,7 @@ document.getElementById('themeBtn').addEventListener('click', () => {
 syncThemeBtn();
 
 wireOwnerUnlock();
+wireReport();
 try {
   const savedPw = sessionStorage.getItem(OWNER_SS_KEY);
   if (savedPw) ownerUnlock(savedPw, true);

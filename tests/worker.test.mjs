@@ -307,3 +307,16 @@ test("settings never saved explicitly follow the current defaults; explicitly sa
   assert.equal(j.data.settingsSaved, true);
   assert.equal(j.data.months["ZS-ESE|2026-10"].invoicedHours, 12);
 });
+
+test("printed-report names and each aircraft's agreement line are settings with sensible defaults", async () => {
+  const env = baseEnv();
+  let j = await (await owner("/owner/state", {}, env)).json();
+  assert.equal(j.data.settings.report.lessor, "VMC Aviation (Pty) Ltd");
+  assert.equal(j.data.settings.report.lessee, "Heritage Aviation (Pty) Ltd");
+  assert.match(j.data.settings.aircraft["ZS-ESE"].agreement, /12 December 2025.*Addendum No\. 1/);
+  assert.match(j.data.settings.aircraft["ZS-JOG"].agreement, /18 July 2025.*Addendum No\. 2/);
+  j = await (await owner("/owner/settings", { settings: { report: { lessee: "Heritage Aviation" }, aircraft: { "ZS-JOG": { agreement: "x".repeat(300) } } } }, env)).json();
+  assert.equal(j.data.settings.report.lessee, "Heritage Aviation");
+  assert.equal(j.data.settings.report.lessor, "VMC Aviation (Pty) Ltd");           // untouched
+  assert.equal(j.data.settings.aircraft["ZS-JOG"].agreement.length, 140);           // capped
+});

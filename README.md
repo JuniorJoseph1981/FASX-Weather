@@ -74,6 +74,20 @@ The weather-day rule is an *estimate from this dashboard's data* and is kept sep
 Heritage's booking system. The contract only recognises weather days where booked flights were
 cancelled and reported, so treat the figures as a working calculation, not a legal ruling.
 
+## PDF summary for the customer
+
+**Contract → PDF** builds a printable A4 report to send with the invoices (the browser's Print → "Save as PDF").
+Pick **one aircraft** (2 pages) or **all aircraft** (a summary page plus one detail page per aircraft). Each aircraft
+is reported on **its own cycle**, chosen in the dialog (it defaults to the cycle being invoiced).
+
+- **Page 1:** guaranteed vs counted hours, the month-by-month working, charts (hours against guarantee, how the
+  surplus/shortfall builds up, every day of the cycle coloured available / maintenance / weather), and the cycle-end billing.
+- **Page 2:** every maintenance period with the reason from the grounding log and how it returned to service; a chart of
+  flyable hours per day; and every weather day with **why it was not flyable** (hours lost to low cloud, gusts,
+  visibility or rain, with the worst readings and the no-fly periods), then a confirmation block for the customer to sign.
+- Months without hours show "—" and the report is marked **PROVISIONAL**.
+- The two company names and each aircraft's agreement line are editable under **Contract → Settings**.
+
 ## How much history can it hold?
 
 - **Contract data (private, in Cloudflare KV):** a month's record is about 0.2 KB, a day override about 0.03 KB.
