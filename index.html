@@ -413,7 +413,6 @@
   .rpt-co{font-size:10px; letter-spacing:.14em; text-transform:uppercase; opacity:.75;}
   .rpt-hd h1{margin:2px 0 0; font-size:21px; font-weight:700; color:#fff;}
   .rpt-r{text-align:right; font-size:10.5px; line-height:1.5;} .rpt-r b{font-size:13px;}
-  .rpt-prov{display:inline-block; margin-left:8px; border:1.5px solid #ffb3a8; color:#ffb3a8; font-size:8.5px; font-weight:700; letter-spacing:.1em; padding:1px 6px; border-radius:3px;}
   .rpt-body{padding:14px 34px 10px; flex:1;}
   .rpt-ref{display:flex; justify-content:space-between; gap:12px; color:#5d6b7a; font-size:10px; margin-bottom:11px; border-bottom:1px solid #d8e0e8; padding-bottom:7px;} .rpt-ref b{color:#17212b;}
   .rpt-kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;}
@@ -438,6 +437,7 @@
   .rpt-leg{display:flex; gap:12px; font-size:9px; color:#5d6b7a; margin-top:4px; flex-wrap:wrap;} .rpt-leg i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px;}
   .rpt-note{font-size:9.5px; color:#5d6b7a;}
   .rpt-pill{display:inline-block; padding:1px 8px; border-radius:99px; font-size:9.5px; font-weight:700; background:#eef2f6; color:#5d6b7a;} .rpt-pill.g{background:#e0f4ea; color:#12724a;} .rpt-pill.m{background:#fbe3e1; color:#a63a34;}
+  .rpt-ft span:last-child{white-space:nowrap; flex:0 0 auto;}
   .rpt-ft{margin:0 34px 14px; border-top:1px solid #d8e0e8; padding-top:7px; display:flex; justify-content:space-between; gap:12px; font-size:8.5px; color:#5d6b7a;}
   @page{size:A4; margin:0;}
   @media print{
@@ -1935,11 +1935,10 @@ const rptLegend = () => `<div class="rpt-leg"><span><i style="background:${RC.ok
 
 // ----- page furniture -----
 function rptHead(d, title, right){
-  const prov = d.cy.state !== 'final' ? `<span class="rpt-prov">PROVISIONAL</span>` : '';
-  return `<div class="rpt-hd"><div><div class="rpt-co">${rptEsc(d.lessor)}</div><h1>${title}</h1></div><div class="rpt-r">${right}${prov}</div></div>`;
+  return `<div class="rpt-hd"><div><div class="rpt-co">${rptEsc(d.lessor)}</div><h1>${title}</h1></div><div class="rpt-r">${right}</div></div>`;
 }
 function rptFoot(d, page, of){
-  return `<div class="rpt-ft"><span>Prepared ${d.prepared}. Weather comes from the FASX Swellendam Flyability Dashboard's logged checks (a reference for guidance only).</span><span>Page ${page} of ${of}</span></div>`;
+  return `<div class="rpt-ft"><span>Prepared ${d.prepared}. Weather is live data from the airfield: the on-site weather station at Swellengrebel, logged every 30 minutes by the FASX Swellendam Flyability Dashboard (visibility is model-derived).</span><span>Page ${page} of ${of}</span></div>`;
 }
 function rptEsc(s){ return escapeAttr(s == null ? '' : s); }
 function rptAcRight(d){ return `<b>${d.reg}</b> &middot; ${rptEsc(d.ac.label)}<br>Cycle: ${rptCycleLong(d.cy.startYM, d.len)} hours<br>Prepared ${d.prepared}`; }
@@ -2039,7 +2038,7 @@ function rptPageFleet(list, page, of){
     return `<tr><td>${i === 0 ? '<b>' + d.reg + '</b>' : ''}</td><td style="text-align:left">${rptMon(m.ym)}</td><td>${m.available}/${m.total}</td><td>${ctFmt(m.baseline)}</td><td>${has ? ctFmt(m.counted) : '—'}</td><td class="${has ? (m.diff >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.diff) : '—'}</td><td class="${has ? (m.balanceAfter >= 0 ? 'pos' : 'neg') : ''}">${has ? rptSgn(m.balanceAfter) : '—'}</td></tr>`; })
     .concat(`<tr class="tot"><td></td><td style="text-align:left">${d.reg} cycle</td><td></td><td>${ctFmt(d.cy.months.filter(m => m.status !== 'na').reduce((a, m) => a + m.baseline, 0))}</td><td>${ctFmt(d.cy.months.filter(m => m.counted !== null).reduce((a, m) => a + m.counted, 0))}</td><td class="${d.cy.balance >= 0 ? 'pos' : 'neg'}">${rptSgn(d.cy.balance)}</td><td>${d.cy.state === 'final' ? (d.cy.deficit > 0 ? 'billable ' + ctFmt(d.cy.deficit) + ' h' : 'surplus lapses') : 'provisional'}</td></tr>`)).join('');
   const heat = list.map(d => `<div style="margin-bottom:5px"><div class="rpt-note" style="margin-bottom:1px"><b>${d.reg}</b> · ${rptCycleLong(d.cy.startYM, d.len)} hours</div>${rptStripsSvg(d.cy.months, 726, 9)}</div>`).join('');
-  return `<section class="rpt-page"><div class="rpt-hd"><div><div class="rpt-co">${rptEsc(lessor)}</div><h1>Fleet utilisation summary</h1></div><div class="rpt-r"><b>${list.map(d => d.reg).join(' · ')}</b><br>Each aircraft on its own contract cycle<br>Prepared ${prepared}${allFinal ? '' : '<span class="rpt-prov">PROVISIONAL</span>'}</div></div>
+  return `<section class="rpt-page"><div class="rpt-hd"><div><div class="rpt-co">${rptEsc(lessor)}</div><h1>Fleet utilisation summary</h1></div><div class="rpt-r"><b>${list.map(d => d.reg).join(' · ')}</b><br>Each aircraft on its own contract cycle<br>Prepared ${prepared}</div></div>
    <div class="rpt-body"><div class="rpt-ref"><span>Aircraft Utilization Agreements and Addenda with <b>${rptEsc(list[0].lessee)}</b></span><span>${list.length} aircraft</span></div>
    <div class="rpt-kpis"><div class="rpt-k"><div class="l">Fleet guaranteed hours</div><div class="v">${ctFmt(guar)} h</div><div class="s">sum of each aircraft's own cycle</div></div>
     <div class="rpt-k"><div class="l">Fleet hours counted</div><div class="v">${ctFmt(counted)} h</div><div class="s">${all.every(x => x.d.cy.months.every(m => m.counted !== null || m.status === 'na')) ? 'all months entered' : 'some months not entered yet'}</div></div>
@@ -2049,7 +2048,7 @@ function rptPageFleet(list, page, of){
    <div class="rpt-two">${list.map(card).join('')}</div>
    <h2>Which days each aircraft was available</h2><div class="rpt-card">${heat}${rptLegend()}</div>
    <h2>Working</h2><table class="rpt-t" style="font-size:9.5px"><thead><tr><th></th><th style="text-align:left">Month</th><th>Avail.<br>days</th><th>Guar.</th><th>Counted</th><th>+/−</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table></div>
-   <div class="rpt-ft"><span>Prepared ${prepared}. The following pages give the maintenance and weather detail for each aircraft.</span><span>Page ${page} of ${of}</span></div></section>`;
+   <div class="rpt-ft"><span>Prepared ${prepared}. Weather is live data from the airfield: the on-site weather station at Swellengrebel, logged every 30 minutes by the FASX Swellendam Flyability Dashboard (visibility is model-derived). The following pages give the maintenance and weather detail for each aircraft.</span><span>Page ${page} of ${of}</span></div></section>`;
 }
 function rptBuildAircraft(reg, startYM, ctx){ const d = rptCollect(reg, startYM, ctx); return {title: reg + ' utilisation ' + rptCycleLabel(startYM, d.len), html: rptPageSummary(d, 1, 2) + rptPageDetail(d, 2, 2)}; }
 function rptBuildFleet(picks, ctx){
@@ -2089,7 +2088,7 @@ function openPdfSheet(){
     ${regs.map(r => { const opts = rptCycleOptions(r, ctx), def = rptDefaultCycle(r, ctx);
       return `<div class="field" data-pdfreg="${r}" style="margin-bottom:8px;"><label>${r} <span class="ct-dim">(its own cycle)</span></label><select class="f" style="margin-top:2px;">${opts.map(o => `<option value="${o.startYM}"${o.startYM === def ? ' selected' : ''}>${o.label}</option>`).join('')}</select></div>`; }).join('')}
     <button type="button" id="pdfGo" class="primary" style="width:100%; margin-top:10px; padding:12px;">Preview &amp; print</button>
-    <div class="hint">A preview opens. Tap <b>Print / Save as PDF</b> and choose &ldquo;Save as PDF&rdquo; as the printer. Hours that haven't been entered show as &mdash; and the report is marked PROVISIONAL.</div>`;
+    <div class="hint">A preview opens. Tap <b>Print / Save as PDF</b> and choose &ldquo;Save as PDF&rdquo; as the printer. Hours that haven't been entered show as &mdash;.</div>`;
   document.getElementById('pdfGo').addEventListener('click', () => {
     const scope = body.querySelector('input[name="pdfScope"]:checked').value;
     const pick = (r) => ({reg: r, startYM: body.querySelector(`[data-pdfreg="${r}"] select`).value});
