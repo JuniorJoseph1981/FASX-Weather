@@ -2028,7 +2028,11 @@ function rptPageFleet(list, page, of){
   const all = list.map(d => { const tr = d.cy.months.filter(m => m.status !== 'na'); return {d, guar: tr.reduce((a, m) => a + m.baseline, 0), counted: tr.filter(m => m.counted !== null).reduce((a, m) => a + m.counted, 0)}; });
   const guar = all.reduce((a, x) => a + x.guar, 0), counted = all.reduce((a, x) => a + x.counted, 0);
   const finals = list.filter(d => d.cy.state === 'final'), bill = finals.reduce((a, d) => a + d.cy.rand.exVat, 0), billH = finals.reduce((a, d) => a + d.cy.deficit, 0);
-  const allFinal = finals.length === list.length;
+  // Billing is reported per aircraft: what is billable from the cycles that are finished, and which aircraft are still open.
+  const opens = list.filter(d => d.cy.state !== 'final'), finalDef = finals.filter(d => d.cy.deficit > 0);
+  const openNote = opens.length ? opens.map(d => d.reg).join(', ') + (opens.length === 1 ? ' cycle still open' : ' cycles still open') : '';
+  const defSub = finals.length === 0 ? 'no cycle finished yet' : [finalDef.length ? finalDef.map(d => d.reg + ' ' + ctFmt(d.cy.deficit) + ' h').join(', ') : 'no deficit', openNote].filter(Boolean).join(' \u00b7 ');
+  const randSub = finals.length === 0 ? 'once a cycle is finished' : ['excl. VAT \u00b7 ' + rptRandFmt(bill * (1 + list[0].s.billing.vatPercent / 100)) + ' incl.', openNote].filter(Boolean).join(' \u00b7 ');
   const card = (d) => { const cy = d.cy, none = cy.months.every(m => m.counted === null), short = cy.balance < 0;
     return `<div class="rpt-card"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">${d.reg}</b><span class="rpt-note">${rptEsc(d.ac.label)}</span></div>
       <div class="rpt-note" style="margin:1px 0 3px">Cycle ${rptCycleLong(cy.startYM, d.len)} hours</div>
@@ -2042,9 +2046,9 @@ function rptPageFleet(list, page, of){
    <div class="rpt-body"><div class="rpt-ref"><span>Aircraft Utilization Agreements and Addenda with <b>${rptEsc(list[0].lessee)}</b></span><span>${list.length} aircraft</span></div>
    <div class="rpt-kpis"><div class="rpt-k"><div class="l">Fleet guaranteed hours</div><div class="v">${ctFmt(guar)} h</div><div class="s">sum of each aircraft's own cycle</div></div>
     <div class="rpt-k"><div class="l">Fleet hours counted</div><div class="v">${ctFmt(counted)} h</div><div class="s">${all.every(x => x.d.cy.months.every(m => m.counted !== null || m.status === 'na')) ? 'all months entered' : 'some months not entered yet'}</div></div>
-    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">Billable deficit</div><div class="v">${allFinal ? ctFmt(billH) + ' h' : '—'}</div><div class="s">${allFinal ? (billH > 0 ? finals.filter(d => d.cy.deficit > 0).map(d => d.reg).join(', ') : 'none') : 'cycles still open'}</div></div>
-    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">To add to invoices</div><div class="v">${allFinal ? rptRandFmt(bill) : '—'}</div><div class="s">${allFinal ? 'excl. VAT · ' + rptRandFmt(bill * (1 + list[0].s.billing.vatPercent / 100)) + ' incl.' : 'once cycles are finished'}</div></div></div>
-   <div class="rpt-note" style="margin:-4px 0 9px">Each aircraft is measured on its own contract and cycle, so one aircraft's surplus never offsets another's shortfall.</div>
+    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">Billable deficit</div><div class="v">${finals.length ? ctFmt(billH) + ' h' : '\u2014'}</div><div class="s">${defSub}</div></div>
+    <div class="rpt-k ${billH > 0 ? 'bad' : ''}"><div class="l">To add to invoices</div><div class="v">${finals.length ? rptRandFmt(bill) : '\u2014'}</div><div class="s">${randSub}</div></div></div>
+   <div class="rpt-note" style="margin:-4px 0 9px">Each aircraft is measured on its own contract and cycle, so one aircraft's surplus never offsets another's shortfall.${opens.length && finals.length ? ' Billing is shown for the finished cycles only; ' + opens.map(d => d.reg).join(', ') + (opens.length === 1 ? ' is' : ' are') + ' still in progress and will be billed when ' + (opens.length === 1 ? 'its cycle finishes' : 'their cycles finish') + '.' : ''}</div>
    <div class="rpt-two">${list.map(card).join('')}</div>
    <h2>Which days each aircraft was available</h2><div class="rpt-card">${heat}${rptLegend()}</div>
    <h2>Working</h2><table class="rpt-t" style="font-size:9.5px"><thead><tr><th></th><th style="text-align:left">Month</th><th>Avail.<br>days</th><th>Guar.</th><th>Counted</th><th>+/−</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table></div>
