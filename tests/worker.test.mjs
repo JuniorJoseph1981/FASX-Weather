@@ -93,9 +93,11 @@ test("state returns defaults on an empty store", async () => {
   const j = await (await owner("/owner/state", {}, baseEnv())).json();
   const a = j.data.settings.aircraft;
   assert.deepEqual(Object.keys(a).sort(), ["ZS-ESE", "ZS-JOG"]);
-  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // both start with August 2026 hours: Aug-Oct is the cycle that ends now; R1,800/h, 40 h, 3-month cycles
-    assert.equal(a[reg].startMonth, "2026-08"); assert.equal(a[reg].cycleMonths, 3);
-    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: "2026-08-01", perHour: 1800 }]);
+  // ZS-ESE starts with August hours (cycle Aug-Oct ends now); ZS-JOG is on a different cycle starting with September hours (Sep-Nov)
+  const start = { "ZS-ESE": "2026-08", "ZS-JOG": "2026-09" };
+  for (const reg of ["ZS-ESE", "ZS-JOG"]) {          // R1,800/h, 40 h, 3-month cycles
+    assert.equal(a[reg].startMonth, start[reg]); assert.equal(a[reg].cycleMonths, 3);
+    assert.equal(a[reg].baselineHours, 40); assert.deepEqual(a[reg].rates, [{ from: start[reg] + "-01", perHour: 1800 }]);
   }
   assert.deepEqual(j.data.months, {});
 });
@@ -147,7 +149,7 @@ test("settings: valid changes applied, junk ignored, previous version kept", asy
   const ese = s.aircraft["ZS-ESE"];
   assert.equal(ese.startMonth, "2027-02"); assert.equal(ese.baselineHours, 42); assert.equal(ese.cycleMonths, 4);
   assert.deepEqual(ese.rates, [{ from: "2026-11-01", perHour: 1800 }, { from: "2027-02-01", perHour: 1900 }]);   // sorted, junk dropped
-  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-08");  // invalid month -> kept
+  assert.equal(s.aircraft["ZS-JOG"].startMonth, "2026-09");  // invalid month -> kept
   assert.equal(s.aircraft["ZS-JOG"].cycleMonths, 3);         // out of range -> kept
   const nu = s.aircraft["ZU-FZS"];                           // a new aircraft gets its own clock and a default rate
   assert.equal(nu.startMonth, "2026-12"); assert.deepEqual(nu.rates, [{ from: "2026-12-01", perHour: 1800 }]);

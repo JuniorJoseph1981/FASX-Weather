@@ -438,9 +438,6 @@
   .rpt-leg{display:flex; gap:12px; font-size:9px; color:#5d6b7a; margin-top:4px; flex-wrap:wrap;} .rpt-leg i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px;}
   .rpt-note{font-size:9.5px; color:#5d6b7a;}
   .rpt-pill{display:inline-block; padding:1px 8px; border-radius:99px; font-size:9.5px; font-weight:700; background:#eef2f6; color:#5d6b7a;} .rpt-pill.g{background:#e0f4ea; color:#12724a;} .rpt-pill.m{background:#fbe3e1; color:#a63a34;}
-  .rpt-confirm{margin-top:8px; background:#f3f6f9; break-inside:avoid; page-break-inside:avoid;}
-  .rpt-chk{display:flex; gap:8px; align-items:flex-start; margin:4px 0; font-size:10.5px;} .rpt-chk i{width:11px; height:11px; border:1.4px solid #17212b; border-radius:2px; margin-top:1px; flex:0 0 auto;}
-  .rpt-sig{display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:16px;} .rpt-sig div{border-top:1px solid #17212b; padding-top:4px; font-size:9.5px; color:#5d6b7a;}
   .rpt-ft{margin:0 34px 14px; border-top:1px solid #d8e0e8; padding-top:7px; display:flex; justify-content:space-between; gap:12px; font-size:8.5px; color:#5d6b7a;}
   @page{size:A4; margin:0;}
   @media print{
@@ -2024,11 +2021,7 @@ function rptPageDetail(d, page, of){
    <div class="rpt-card">${rptDailySvg(d.daily, cy.months, 726, 112)}<div class="rpt-leg"><span><i style="background:${RC.ok}"></i>flyable day</span><span><i style="background:${RC.weather}"></i>weather day</span><span><i style="background:#f6d9d7"></i>aircraft in maintenance</span></div></div>
    <h2>Weather days — why each was not flyable (${d.wx.length} day${d.wx.length === 1 ? '' : 's'})</h2>
    ${d.wx.length ? `<table class="rpt-t rpt-wx"><colgroup><col style="width:12%"><col style="width:11%"><col style="width:52%"><col style="width:25%"></colgroup><thead><tr><th>Day</th><th>Flyable<br>hours</th><th style="text-align:left">What stopped flying (limits: gusts ${CRIT.windNoFly} kt, cloud ${CRIT.ceilNoFly.toLocaleString('en-ZA').replace(/ /g, ' ')} ft, visibility ${CRIT.visNoFly} km)</th><th style="text-align:left">No-fly periods</th></tr></thead><tbody>${wxRows}</tbody></table>` : `<div class="rpt-note">No weather days in this cycle.</div>`}
-   ${d.adj.length ? `<h2>Days adjusted by VMC</h2><table class="rpt-t"><tbody>${adjRows}</tbody></table>` : ''}
-   <div class="rpt-card rpt-confirm"><div style="font-weight:700;margin-bottom:4px">For ${rptEsc(d.lessee)} to confirm</div>
-    <div class="rpt-chk"><i></i><span>We agree with the maintenance and weather days listed above for ${d.reg}.</span></div>
-    <div class="rpt-chk"><i></i><span>We dispute these days (please list them with the cancelled bookings): ________________________________________</span></div>
-    <div class="rpt-sig"><div>For ${rptEsc(d.lessee)} · name, signature, date</div><div>For ${rptEsc(d.lessor)} · name, signature, date</div></div></div></div>
+   ${d.adj.length ? `<h2>Days adjusted by VMC</h2><table class="rpt-t"><tbody>${adjRows}</tbody></table>` : ''}</div>
    ${rptFoot(d, page, of)}</section>`;
 }
 function rptPageFleet(list, page, of){

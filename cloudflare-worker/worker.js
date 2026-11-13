@@ -32,7 +32,7 @@
 //                                  (the existing secret; OWNER_PASSWORD is accepted as an alternative name)
 //   FASX_KV              (KV binding) storage for the private contract data
 
-const WORKER_VERSION = "2026-11-13-report-pdf";
+const WORKER_VERSION = "2026-11-13-jog-sep";
 const LAT = -34.0482, LON = 20.4746, TZ_OFFSET = "+02:00"; // Africa/Johannesburg, fixed UTC+2, no DST
 const IWEATHAR_STATION_NAME = "Swellengrebel Airfield";
 
@@ -56,7 +56,8 @@ const LOCKOUT_SECONDS = 900;         // ... within this window
 //   baselineHours   guaranteed billed hours per month
 //   rates           hourly price history [{from, perHour}] (ex VAT); the rate in force on the last day
 //                   of a cycle is used for the cycle-end estimate, so a price rise never changes old cycles
-const DEFAULT_START_MONTH = "2026-08";   // the cycle that ends with October hours (invoice dated 31 Oct, prepared in November) started with August hours
+const DEFAULT_START_MONTH = "2026-08";   // ZS-ESE: its current cycle (Aug-Oct hours) ends with October, invoiced in November
+const JOG_START_MONTH = "2026-09";       // ZS-JOG is on a different cycle: Sep-Nov hours, then Dec-Feb, ...
 const DEFAULT_SETTINGS = {
   billing: { multiplier: 1, vatPercent: 15 },      // multiplier on deficit hours; 1 because invoiced hours already include the tacho x 1.2
   weatherRule: {
@@ -70,7 +71,7 @@ const DEFAULT_SETTINGS = {
   report: { lessor: "VMC Aviation (Pty) Ltd", lessee: "Heritage Aviation (Pty) Ltd" },   // names on the printed PDF
   aircraft: {
     "ZS-ESE": { label: "Siai-Marchetti S205", agreement: "Aircraft Utilization Agreement 12 December 2025 \u00b7 Addendum No. 1", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
-    "ZS-JOG": { label: "Cessna 172N", agreement: "Aircraft Utilization Agreement 18 July 2025 \u00b7 Addendum 23 October 2025 \u00b7 Addendum No. 2", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
+    "ZS-JOG": { label: "Cessna 172N", agreement: "Aircraft Utilization Agreement 18 July 2025 \u00b7 Addendum 23 October 2025 \u00b7 Addendum No. 2", startMonth: JOG_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: JOG_START_MONTH + "-01", perHour: 1800 }], enabled: true },
   },
 };
 
