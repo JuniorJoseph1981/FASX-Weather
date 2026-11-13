@@ -86,7 +86,7 @@ is reported on **its own cycle**, chosen in the dialog (it defaults to the cycle
 - **Page 2:** every maintenance period with the reason from the grounding log and how it returned to service; a chart of
   flyable hours per day; and every weather day with **why it was not flyable** (hours lost to low cloud, gusts,
   visibility or rain, with the worst readings and the no-fly periods). The report is a record of what happened and why; it has no sign-off section.
-- Months without hours show "—" and the report is marked **PROVISIONAL**.
+- Months without hours show "—". Footers say the weather is live data from the airfield (the on-site station, logged every 30 minutes; visibility is model-derived).
 - The two company names and each aircraft's agreement line are editable under **Contract → Settings**.
 
 ## How much history can it hold?
