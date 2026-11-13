@@ -32,7 +32,7 @@
 //                                  (the existing secret; OWNER_PASSWORD is accepted as an alternative name)
 //   FASX_KV              (KV binding) storage for the private contract data
 
-const WORKER_VERSION = "2026-11-10-aug-start";
+const WORKER_VERSION = "2026-11-13-report-pdf";
 const LAT = -34.0482, LON = 20.4746, TZ_OFFSET = "+02:00"; // Africa/Johannesburg, fixed UTC+2, no DST
 const IWEATHAR_STATION_NAME = "Swellengrebel Airfield";
 
@@ -67,9 +67,10 @@ const DEFAULT_SETTINGS = {
     cautionCountsAsFlyable: true,
   },
   releaseDayCountsAsUnavailable: false,            // is the day an aircraft is released still "unavailable"?
+  report: { lessor: "VMC Aviation (Pty) Ltd", lessee: "Heritage Aviation (Pty) Ltd" },   // names on the printed PDF
   aircraft: {
-    "ZS-ESE": { label: "Siai-Marchetti S205", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
-    "ZS-JOG": { label: "Cessna 172N", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
+    "ZS-ESE": { label: "Siai-Marchetti S205", agreement: "Aircraft Utilization Agreement 12 December 2025 \u00b7 Addendum No. 1", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
+    "ZS-JOG": { label: "Cessna 172N", agreement: "Aircraft Utilization Agreement 18 July 2025 \u00b7 Addendum 23 October 2025 \u00b7 Addendum No. 2", startMonth: DEFAULT_START_MONTH, cycleMonths: 3, baselineHours: 40, rates: [{ from: DEFAULT_START_MONTH + "-01", perHour: 1800 }], enabled: true },
   },
 };
 
@@ -344,6 +345,7 @@ function sanitizeAircraftEntry(a, prev) {
   const startMonth = isYearMonth(x.startMonth) ? x.startMonth : (isYearMonth(p.startMonth) ? p.startMonth : DEFAULT_START_MONTH);
   return {
     label: String(x.label !== undefined ? x.label : (p.label || "")).slice(0, 60),
+    agreement: String(x.agreement !== undefined ? x.agreement : (p.agreement || "")).slice(0, 140),
     startMonth,
     cycleMonths: Math.round(clampNum(x.cycleMonths, p.cycleMonths || 3, 1, 12)),
     baselineHours: clampNum(x.baselineHours, p.baselineHours !== undefined ? p.baselineHours : 40, 0, 744),
@@ -371,6 +373,10 @@ function sanitizeSettings(input, base) {
       cautionCountsAsFlyable: typeof wr.cautionCountsAsFlyable === "boolean" ? wr.cautionCountsAsFlyable : b.weatherRule.cautionCountsAsFlyable,
     },
     releaseDayCountsAsUnavailable: typeof i.releaseDayCountsAsUnavailable === "boolean" ? i.releaseDayCountsAsUnavailable : b.releaseDayCountsAsUnavailable,
+    report: {
+      lessor: String(i.report && i.report.lessor !== undefined ? i.report.lessor : b.report.lessor).slice(0, 80),
+      lessee: String(i.report && i.report.lessee !== undefined ? i.report.lessee : b.report.lessee).slice(0, 80),
+    },
     aircraft: {},
   };
   if (out.weatherRule.windowEnd <= out.weatherRule.windowStart) {

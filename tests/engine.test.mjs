@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const block = html.match(/\/\/ ==== CONTRACT ENGINE START[\s\S]*?\/\/ ==== CONTRACT ENGINE END ====/);
 assert.ok(block, "engine block not found in index.html");
-const E = new Function(block[0] + "\nreturn { ctCycleStart, ctCycleMonths, ctMonth, ctCycle, ctIndexHistory, ctFloorTenth, ctWeatherDay };")();
+const E = new Function(block[0] + "\nreturn { ctCycleStart, ctCycleMonths, ctMonth, ctCycle, ctIndexHistory, ctFloorTenth, ctWeatherDay, ctWeatherDetail, ctMaintRanges };")();
 
 // ZS-ESE is given an earlier start (Aug) than the real default (Nov) so the Aug-Oct worked example can be checked.
 const ac = (startMonth, extra = {}) => ({ startMonth, cycleMonths: 3, baselineHours: 40, rates: [{ from: startMonth + "-01", perHour: 1800 }], enabled: true, ...extra });
@@ -18,11 +18,11 @@ const settings = () => ({
 });
 // The real ZS-ESE grounding history from data/aircraft_status.csv
 const ESE = [
-  { Registration: "ZS-ESE", GroundedDate: "2026-08-20", UngroundedDate: "2026-08-26" },
-  { Registration: "ZS-ESE", GroundedDate: "2026-09-11", UngroundedDate: "2026-09-12" },
-  { Registration: "ZS-ESE", GroundedDate: "2026-10-08", UngroundedDate: "2026-10-14" },
-  { Registration: "ZS-ESE", GroundedDate: "2026-10-17", UngroundedDate: "2026-10-26" },
-  { Registration: "ZS-ESE", GroundedDate: "2026-10-30", UngroundedDate: "" },
+  { Registration: "ZS-ESE", GroundedDate: "2026-08-20", GroundedNote: "Right gear Olio collapsed", UngroundedDate: "2026-08-26", UngroundedNote: "both olio reconditioned" },
+  { Registration: "ZS-ESE", GroundedDate: "2026-09-11", GroundedNote: "Alternator", UngroundedDate: "2026-09-12", UngroundedNote: "Geni fitted" },
+  { Registration: "ZS-ESE", GroundedDate: "2026-10-08", GroundedNote: "Battery", UngroundedDate: "2026-10-14", UngroundedNote: "Battery replaced" },
+  { Registration: "ZS-ESE", GroundedDate: "2026-10-17", GroundedNote: "Cowling", UngroundedDate: "2026-10-26", UngroundedNote: "Cowl repaired" },
+  { Registration: "ZS-ESE", GroundedDate: "2026-10-30", GroundedNote: "Mpi", UngroundedDate: "", UngroundedNote: "" },
 ];
 // n30-minute rows for a date, all with the same verdict, between 06:00 and 19:30
 function dayRows(date, verdict) {
@@ -187,4 +187,53 @@ test("credit never carries across cycles", () => {
     "ZS-ESE|2027-02": { invoicedHours: 30 }, "ZS-ESE|2027-03": { invoicedHours: 40 }, "ZS-ESE|2027-04": { invoicedHours: 40 } } });
   assert.equal(E.ctCycle("ZS-ESE", "2026-11", c).credit, 60);
   assert.equal(E.ctCycle("ZS-ESE", "2027-02", c).deficit, 10);   // the 60 h credit is gone
+});
+
+// ---- evidence for the printed report ----
+const CRIT = { windCaution: 15, windNoFly: 25, ceilCaution: 1500, ceilNoFly: 1000, visCaution: 8, visNoFly: 5 };
+const slot = (date, i, o) => { const m = 420 + i * 30; return { LocalTime: `${date}T${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 === 0 ? "00" : "30"}`, VerdictSource: "station", Fc_Visibility_km: "30", St_Precip: "None", St_RainRate_mm_hr: "0", ...o }; };
+
+test("weather detail: hours lost to each factor, worst readings and the no-fly periods", () => {
+  const d = "2026-11-03", rows = [];
+  for (let i = 0; i < 8; i++) rows.push(slot(d, i, { Verdict: "NO-FLY", St_WindGust_kt: "6", St_CeilingEst_ft: "480" }));      // 07:00-11:00 low cloud
+  for (let i = 8; i < 12; i++) rows.push(slot(d, i, { Verdict: "NO-FLY", St_WindGust_kt: i === 10 ? "31" : "27", St_CeilingEst_ft: "2500" })); // 11:00-13:00 gusts
+  for (let i = 12; i < 22; i++) rows.push(slot(d, i, { Verdict: "FLYABLE", St_WindGust_kt: "9", St_CeilingEst_ft: "3200" }));
+  const r = E.ctWeatherDetail(d, E.ctIndexHistory(rows), settings().weatherRule, CRIT);
+  assert.equal(r.flyableHours, 5); assert.equal(r.noFlyHours, 6); assert.equal(r.slots, 22);
+  assert.deepEqual(r.spans, ["07:00–13:00"]);
+  assert.deepEqual(r.factors.map((f) => [f.key, f.hours, f.worst, f.limit]), [["cloud", 4, 480, 1000], ["wind", 2, 31, 25]]);   // most hours first
+  assert.equal(r.peakGust, 31); assert.equal(r.lowestCloud, 480); assert.equal(r.lowestVis, 30);
+});
+
+test("weather detail: separate no-fly periods, forecast-only rows, rain and poor visibility", () => {
+  const d = "2026-11-04", rows = [];
+  for (let i = 0; i < 22; i++) {
+    const bad = i < 3 || (i >= 10 && i < 12);
+    rows.push({ LocalTime: slot(d, i, {}).LocalTime, VerdictSource: "forecast", Verdict: bad ? "NO-FLY" : "FLYABLE", Fc_Gust_kt: "8", Fc_CeilingEst_ft: "", Fc_Visibility_km: i < 3 ? "3.5" : "30", Fc_Precip: i >= 10 && i < 12 ? "Moderate" : "None" });
+  }
+  const r = E.ctWeatherDetail(d, E.ctIndexHistory(rows), settings().weatherRule, CRIT);
+  assert.deepEqual(r.spans, ["07:00–08:30", "12:00–13:00"]);
+  assert.deepEqual(r.factors.map((f) => [f.key, f.hours]), [["vis", 1.5], ["rain", 1]]);
+  assert.equal(r.lowestVis, 3.5); assert.equal(r.lowestCloud, null);
+  assert.equal(E.ctWeatherDetail("2026-01-01", E.ctIndexHistory([]), settings().weatherRule, CRIT).slots, 0);
+});
+
+test("maintenance ranges carry the reason from the grounding log and match the calculated days", () => {
+  const cy = E.ctCycle("ZS-ESE", "2026-08", ctx({ todayStr: "2026-11-13" }));
+  const r = E.ctMaintRanges("ZS-ESE", cy.months, ESE);
+  assert.deepEqual(r.map((x) => [x.from, x.to, x.days, x.reason]), [
+    ["2026-08-20", "2026-08-25", 6, "Right gear Olio collapsed"], ["2026-09-11", "2026-09-11", 1, "Alternator"],
+    ["2026-10-08", "2026-10-13", 6, "Battery"], ["2026-10-17", "2026-10-25", 9, "Cowling"], ["2026-10-30", "2026-10-31", 2, "Mpi"]]);
+  assert.equal(r[0].back, "both olio reconditioned"); assert.equal(r[4].open, true); assert.equal(r[0].open, false);
+  assert.equal(r.reduce((a, x) => a + x.days, 0), cy.months.reduce((a, m) => a + m.counts.maint, 0));   // same days as the maths used
+  assert.ok(E.ctMaintRanges("ZS-JOG", cy.months, ESE).every((x) => x.reason === "no matching grounding record"));   // never invents a reason
+});
+
+test("weather detail: log times that drift a minute still form one clean period (rounded to 5 minutes)", () => {
+  const d = "2026-11-05", rows = [];
+  [["07:01", "FLYABLE"], ["07:31", "NO-FLY"], ["08:01", "NO-FLY"], ["08:31", "NO-FLY"], ["09:02", "NO-FLY"], ["09:31", "FLYABLE"], ["12:00", "NO-FLY"], ["12:31", "NO-FLY"]].forEach(([tm, v]) =>
+    rows.push({ LocalTime: `${d}T${tm}`, VerdictSource: "station", Verdict: v, St_WindGust_kt: "30", St_CeilingEst_ft: "2500", Fc_Visibility_km: "30", St_Precip: "None", St_RainRate_mm_hr: "0" }));
+  for (let i = 0; i < 14; i++) rows.push({ LocalTime: `${d}T${String(13 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "31" : "01"}`, VerdictSource: "station", Verdict: "FLYABLE", St_WindGust_kt: "8", St_CeilingEst_ft: "3000", Fc_Visibility_km: "30", St_Precip: "None", St_RainRate_mm_hr: "0" });
+  const r = E.ctWeatherDetail(d, E.ctIndexHistory(rows), settings().weatherRule, CRIT);
+  assert.deepEqual(r.spans, ["07:30–09:30", "12:00–13:00"]);
 });
