@@ -54,13 +54,14 @@ invoice **dated 31 October**; November's hours are done in December and dated 30
 reads "October 2026 hours — invoice dated 31 October · prepared in November", and a banner at the top
 opens the invoice you are due to prepare.
 
-**Each aircraft has its own contract clock.** Tracking for ZS-ESE and ZS-JOG starts with the
-**August 2026 hours**: the cycle that ends now is Aug–Sep–Oct hours (invoices dated 31 Aug, 30 Sep and
-31 Oct; October is prepared in November and is the last month of that cycle). The next cycle is
-Nov–Jan hours (invoices dated 30 Nov, 31 Dec, 31 Jan), then Feb–Apr, … Enter August, September and
-October for each aircraft; the page opens on the cycle that still needs hours and a banner lists the
-months to work through, oldest first (each month carries its credit or deficit into the next).
-A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
+**Each aircraft has its own contract clock.**
+- **ZS-ESE** starts with the **August 2026 hours**: its current cycle is Aug–Sep–Oct hours (invoices dated 31 Aug,
+  30 Sep and 31 Oct; October is prepared in November and is the cycle's last month). Next: Nov–Jan, then Feb–Apr, …
+- **ZS-JOG** is on a different cycle and starts with the **September 2026 hours**: Sep–Oct–Nov hours (invoices dated
+  30 Sep, 31 Oct and 30 Nov), then Dec–Feb, Mar–May, … September and October are entered now; November is prepared in December.
+
+The page opens on the cycle that still needs hours and a banner lists the months to work through, oldest first (each
+month carries its credit or deficit into the next). A new aircraft gets its own start month, so its cycles run from its own first invoice and never roll
 from a mid-month date.
 
 Everything adjustable lives under **Contract → Settings**, no code change needed:
@@ -84,7 +85,7 @@ is reported on **its own cycle**, chosen in the dialog (it defaults to the cycle
   surplus/shortfall builds up, every day of the cycle coloured available / maintenance / weather), and the cycle-end billing.
 - **Page 2:** every maintenance period with the reason from the grounding log and how it returned to service; a chart of
   flyable hours per day; and every weather day with **why it was not flyable** (hours lost to low cloud, gusts,
-  visibility or rain, with the worst readings and the no-fly periods), then a confirmation block for the customer to sign.
+  visibility or rain, with the worst readings and the no-fly periods). The report is a record of what happened and why; it has no sign-off section.
 - Months without hours show "—" and the report is marked **PROVISIONAL**.
 - The two company names and each aircraft's agreement line are editable under **Contract → Settings**.
 
